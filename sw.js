@@ -3,7 +3,7 @@
    Cache-first Service Worker.  Works perfectly in airplane mode.
    ============================================================ */
 
-const CACHE_NAME = 'taptalk-v1';
+const CACHE_NAME = 'taptalk-v2';
 
 /** Static app-shell assets cached on install */
 const STATIC_ASSETS = [
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   './index.html',
   './styles.css',
   './app.js',
+  './db.js',
   './manifest.json',
   './icon.svg',
 ];

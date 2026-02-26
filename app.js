@@ -277,6 +277,7 @@ const CoreVocab = (() => {
       btn.addEventListener('click', () => {
         Speech.speak(word);
         DB.log('vocabulary_use', { word, category: 'core_vocab' });
+        window.CommDB?.logEvent('single_word', { words: [word], view: 'core-vocab' });
       });
     });
   }
@@ -326,9 +327,11 @@ const ChoiceBoard = (() => {
       const phrase = `${_slots[0]} or ${_slots[1]}`;
       Speech.speak(phrase);
       DB.log('choice_made', { choice1: _slots[0], choice2: _slots[1], phrase });
+      window.CommDB?.logEvent('sentence_formed', { words: [_slots[0], _slots[1]], view: 'choice-board' });
     } else {
       /* Both slots full — re-speak current phrase */
       Speech.speak(`${_slots[0]} or ${_slots[1]}`);
+      window.CommDB?.logEvent('sentence_formed', { words: [_slots[0], _slots[1]], view: 'choice-board' });
     }
   }
 
@@ -338,6 +341,7 @@ const ChoiceBoard = (() => {
     _clearSlot(0);
     _clearSlot(1);
     DB.log('choice_cleared', {});
+    window.CommDB?.logEvent('clear_board', { words: [], view: 'choice-board' });
   }
 
   function init() {
@@ -367,10 +371,16 @@ const ChoiceBoard = (() => {
 
     /* Filled slot tap → speak that item */
     document.getElementById('slot-1').addEventListener('click', () => {
-      if (_slots[0]) Speech.speak(_slots[0]);
+      if (_slots[0]) {
+        Speech.speak(_slots[0]);
+        window.CommDB?.logEvent('single_word', { words: [_slots[0]], view: 'choice-board' });
+      }
     });
     document.getElementById('slot-2').addEventListener('click', () => {
-      if (_slots[1]) Speech.speak(_slots[1]);
+      if (_slots[1]) {
+        Speech.speak(_slots[1]);
+        window.CommDB?.logEvent('single_word', { words: [_slots[1]], view: 'choice-board' });
+      }
     });
 
     document.getElementById('btn-clear').addEventListener('click', _clearAll);
