@@ -1,0 +1,451 @@
+/* ============================================================
+   TapTalk AAC — app.js
+   Modular, offline-first AAC application.
+   IndexedDB event log is designed for future Anderson-OS sync.
+   ============================================================ */
+
+'use strict';
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CONFIG = Object.freeze({
+  DB_NAME: 'taptalk-db',
+  DB_VERSION: 1,
+  STORE_EVENTS: 'events',
+  ARASAAC_SEARCH: 'https://api.arasaac.org/v1/pictograms/en/search/',
+  ARASAAC_IMG_BASE: 'https://static.arasaac.org/pictograms/',
+  BANK_ITEMS: ['Rocks', 'Ball', 'Walk', 'Coloring', 'Book', 'Math', 'Writing'],
+  CORE_VOCAB: ['Yes', 'No'],
+});
+
+/* ============================================================
+   SESSION
+   ============================================================ */
+const SESSION_ID = (typeof crypto !== 'undefined' && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/* ============================================================
+   DATABASE MODULE
+   Stores every user interaction locally.
+   Schema is designed so Anderson-OS can ingest the data later:
+     { id, timestamp, sessionId, type, data }
+   ============================================================ */
+const DB = (() => {
+  let _db = null;
+
+  function open() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
+
+      req.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(CONFIG.STORE_EVENTS)) {
+          const store = database.createObjectStore(CONFIG.STORE_EVENTS, {
+            keyPath: 'id',
+            autoIncrement: true,
+          });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+          store.createIndex('sessionId', 'sessionId', { unique: false });
+          store.createIndex('type', 'type', { unique: false });
+        }
+      };
+
+      req.onsuccess = (e) => {
+        _db = e.target.result;
+        resolve(_db);
+      };
+
+      req.onerror = (e) => {
+        console.error('[TapTalk] IndexedDB open error:', e.target.error);
+        reject(e.target.error);
+      };
+    });
+  }
+
+  function log(type, data) {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      sessionId: SESSION_ID,
+      type,
+      data,
+    };
+
+    if (!_db) {
+      console.warn('[TapTalk] DB not ready — event not persisted:', entry);
+      DevTools.append({ ...entry, id: 'pending' });
+      return;
+    }
+
+    const tx = _db.transaction(CONFIG.STORE_EVENTS, 'readwrite');
+    const store = tx.objectStore(CONFIG.STORE_EVENTS);
+    const req = store.add(entry);
+
+    req.onsuccess = (e) => {
+      entry.id = e.target.result;
+      DevTools.append(entry);
+    };
+
+    req.onerror = () => console.error('[TapTalk] Failed to persist event');
+  }
+
+  function getAll() {
+    return new Promise((resolve, reject) => {
+      if (!_db) return reject(new Error('DB not ready'));
+      const tx = _db.transaction(CONFIG.STORE_EVENTS, 'readonly');
+      const req = tx.objectStore(CONFIG.STORE_EVENTS).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  return { open, log, getAll };
+})();
+
+/* ============================================================
+   SPEECH MODULE
+   ============================================================ */
+const Speech = (() => {
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate = 0.9;
+    utt.pitch = 1.0;
+    utt.volume = 1.0;
+    window.speechSynthesis.speak(utt);
+  }
+
+  return { speak };
+})();
+
+/* ============================================================
+   PICTOGRAM MODULE
+   Fetches ARASAAC pictograms and caches URLs in memory.
+   Service worker handles HTTP-level caching for offline use.
+   ============================================================ */
+const Pictogram = (() => {
+  const _urlCache = new Map(); // word (lowercase) → image URL
+
+  async function _fetchId(word) {
+    const key = word.toLowerCase();
+    if (_urlCache.has(key)) return _urlCache.get(key);
+
+    try {
+      const res = await fetch(
+        `${CONFIG.ARASAAC_SEARCH}${encodeURIComponent(key)}`
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const url = `${CONFIG.ARASAAC_IMG_BASE}${data[0]._id}/${data[0]._id}_500.png`;
+        _urlCache.set(key, url);
+        return url;
+      }
+    } catch (err) {
+      console.warn(`[TapTalk] Pictogram fetch failed for "${word}":`, err.message);
+    }
+    return null;
+  }
+
+  /**
+   * Load a pictogram into an <img> element.
+   * Falls back gracefully (image stays hidden, label remains visible).
+   */
+  async function load(imgEl, word) {
+    imgEl.classList.add('pict-loading');
+    const url = await _fetchId(word);
+    if (url) {
+      imgEl.src = url;
+      imgEl.onload = () => imgEl.classList.remove('pict-loading');
+      imgEl.onerror = () => {
+        imgEl.classList.remove('pict-loading');
+        imgEl.removeAttribute('src');
+      };
+    } else {
+      imgEl.classList.remove('pict-loading');
+    }
+  }
+
+  /** Return the cached URL for a word (used when filling choice slots) */
+  function getCachedUrl(word) {
+    return _urlCache.get(word.toLowerCase()) || null;
+  }
+
+  return { load, getCachedUrl };
+})();
+
+/* ============================================================
+   DEV TOOLS MODULE
+   Real-time IndexedDB event log panel.
+   Proves data capture for the future Anderson-OS integration.
+   ============================================================ */
+const DevTools = (() => {
+  const _panel = () => document.getElementById('dev-tools-panel');
+  const _entries = () => document.getElementById('dev-log-entries');
+  const _counter = () => document.getElementById('dev-event-count');
+  let _count = 0;
+
+  function init() {
+    document.getElementById('dev-tools-toggle').addEventListener('click', () => {
+      _panel().classList.toggle('hidden');
+      if (!_panel().classList.contains('hidden')) _loadAll();
+    });
+
+    document.getElementById('dev-tools-close').addEventListener('click', () => {
+      _panel().classList.add('hidden');
+    });
+
+    document.getElementById('dev-clear-log').addEventListener('click', () => {
+      _entries().innerHTML = '';
+      _count = 0;
+      _updateCounter();
+    });
+  }
+
+  function _updateCounter() {
+    _counter().textContent = `${_count} event${_count !== 1 ? 's' : ''} logged`;
+  }
+
+  function _renderEntry(entry) {
+    const div = document.createElement('div');
+    div.className = 'dev-log-entry';
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    const idStr = entry.id != null ? `[${entry.id}] ` : '';
+    div.innerHTML =
+      `<span class="log-time">${time}</span>` +
+      `<span class="log-type">${idStr}${entry.type}</span>` +
+      `${JSON.stringify(entry.data)}`;
+    return div;
+  }
+
+  /** Called by DB.log() immediately after a successful write */
+  function append(entry) {
+    _count++;
+    _updateCounter();
+    if (_panel().classList.contains('hidden')) return;
+    _entries().prepend(_renderEntry(entry));
+  }
+
+  async function _loadAll() {
+    try {
+      const events = await DB.getAll();
+      _entries().innerHTML = '';
+      _count = events.length;
+      _updateCounter();
+      [...events].reverse().forEach((e) => _entries().appendChild(_renderEntry(e)));
+    } catch (err) {
+      console.warn('[TapTalk] DevTools load failed:', err);
+    }
+  }
+
+  return { init, append };
+})();
+
+/* ============================================================
+   VIEW MODULE
+   ============================================================ */
+const Views = (() => {
+  function switchTo(viewId) {
+    document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+    document.getElementById(`view-${viewId}`).classList.add('active');
+    document.querySelector(`.nav-btn[data-view="${viewId}"]`).classList.add('active');
+    DB.log('view_changed', { view: viewId });
+  }
+
+  function init() {
+    document.querySelectorAll('.nav-btn').forEach((btn) => {
+      btn.addEventListener('click', () => switchTo(btn.dataset.view));
+    });
+  }
+
+  return { init, switchTo };
+})();
+
+/* ============================================================
+   CORE VOCAB MODULE  (View 1 — Yes / No)
+   ============================================================ */
+const CoreVocab = (() => {
+  function init() {
+    const words = ['yes', 'no'];
+    words.forEach((word) => {
+      const btn = document.getElementById(`btn-${word}`);
+      const img = document.getElementById(`img-${word}`);
+      Pictogram.load(img, word);
+      btn.addEventListener('click', () => {
+        Speech.speak(word);
+        DB.log('vocabulary_use', { word, category: 'core_vocab' });
+      });
+    });
+  }
+
+  return { init };
+})();
+
+/* ============================================================
+   CHOICE BOARD MODULE  (View 2 — Tap-to-Fill)
+   ============================================================ */
+const ChoiceBoard = (() => {
+  const _slots = [null, null]; // [item1, item2]
+
+  function _fillSlot(index, word) {
+    const slotEl = document.getElementById(`slot-${index + 1}`);
+    slotEl.classList.remove('empty');
+    slotEl.innerHTML = '';
+
+    const url = Pictogram.getCachedUrl(word);
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = word;
+      slotEl.appendChild(img);
+    }
+
+    const lbl = document.createElement('span');
+    lbl.className = 'slot-label';
+    lbl.textContent = word;
+    slotEl.appendChild(lbl);
+  }
+
+  function _clearSlot(index) {
+    const slotEl = document.getElementById(`slot-${index + 1}`);
+    slotEl.classList.add('empty');
+    slotEl.innerHTML = '<span class="slot-placeholder">?</span>';
+  }
+
+  function _handleBankClick(word) {
+    if (_slots[0] === null) {
+      _slots[0] = word;
+      _fillSlot(0, word);
+      DB.log('choice_slot_filled', { slot: 1, word });
+    } else if (_slots[1] === null) {
+      _slots[1] = word;
+      _fillSlot(1, word);
+      const phrase = `${_slots[0]} or ${_slots[1]}`;
+      Speech.speak(phrase);
+      DB.log('choice_made', { choice1: _slots[0], choice2: _slots[1], phrase });
+    } else {
+      /* Both slots full — re-speak current phrase */
+      Speech.speak(`${_slots[0]} or ${_slots[1]}`);
+    }
+  }
+
+  function _clearAll() {
+    _slots[0] = null;
+    _slots[1] = null;
+    _clearSlot(0);
+    _clearSlot(1);
+    DB.log('choice_cleared', {});
+  }
+
+  function init() {
+    const bank = document.getElementById('choice-bank');
+
+    CONFIG.BANK_ITEMS.forEach((word) => {
+      const div = document.createElement('div');
+      div.className = 'bank-item';
+      div.setAttribute('role', 'button');
+      div.setAttribute('aria-label', word);
+      div.dataset.word = word;
+
+      const img = document.createElement('img');
+      img.alt = word;
+
+      const lbl = document.createElement('span');
+      lbl.className = 'item-label';
+      lbl.textContent = word;
+
+      div.appendChild(img);
+      div.appendChild(lbl);
+      bank.appendChild(div);
+
+      Pictogram.load(img, word.toLowerCase());
+      div.addEventListener('click', () => _handleBankClick(word));
+    });
+
+    /* Filled slot tap → speak that item */
+    document.getElementById('slot-1').addEventListener('click', () => {
+      if (_slots[0]) Speech.speak(_slots[0]);
+    });
+    document.getElementById('slot-2').addEventListener('click', () => {
+      if (_slots[1]) Speech.speak(_slots[1]);
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', _clearAll);
+  }
+
+  return { init };
+})();
+
+/* ============================================================
+   ORIENTATION MODULE
+   ============================================================ */
+const Orientation = (() => {
+  function check() {
+    const warn = document.getElementById('orientation-warning');
+    if (window.innerWidth < window.innerHeight) {
+      warn.classList.add('visible');
+    } else {
+      warn.classList.remove('visible');
+    }
+  }
+
+  function init() {
+    check();
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+  }
+
+  return { init };
+})();
+
+/* ============================================================
+   SERVICE WORKER REGISTRATION
+   ============================================================ */
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('./sw.js')
+      .then((reg) => console.log('[TapTalk] SW registered:', reg.scope))
+      .catch((err) => console.warn('[TapTalk] SW registration failed:', err));
+  }
+}
+
+/* ============================================================
+   APP INIT
+   ============================================================ */
+async function init() {
+  registerSW();
+
+  await DB.open();
+
+  Views.init();
+  CoreVocab.init();
+  ChoiceBoard.init();
+  DevTools.init();
+  Orientation.init();
+
+  DB.log('session_start', {
+    sessionId: SESSION_ID,
+    appVersion: '1.0.0',
+    userAgent: navigator.userAgent,
+  });
+
+  console.log('[TapTalk] Ready. Session:', SESSION_ID);
+}
+
+/* ============================================================
+   PUBLIC API  (Anderson-OS integration surface)
+   External systems can call window.TapTalk.exportData() to
+   retrieve the full IndexedDB event log for sync/analysis.
+   ============================================================ */
+window.TapTalk = {
+  version: '1.0.0',
+  getSessionId: () => SESSION_ID,
+  /** Returns a Promise<Array> of all logged events */
+  exportData: () => DB.getAll(),
+};
+
+document.addEventListener('DOMContentLoaded', init);

@@ -1,0 +1,441 @@
+/* ============================================================
+   TapTalk AAC — styles.css
+   Tablet-landscape-first, touch-action:manipulation throughout
+   ============================================================ */
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1a2e;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #fff;
+  /* Prevent any text selection — motor planning disruption risk */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- App shell ---------- */
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------- Navigation ---------- */
+#main-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 60px;
+  min-height: 60px;
+  padding: 0 10px;
+  background: #16213e;
+  border-bottom: 3px solid #0f3460;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  flex: 1;
+  height: 44px;
+  border: 2px solid #0f3460;
+  background: transparent;
+  color: #7a8aa0;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  /* Fixed size: never move / resize after render */
+  transition: none;
+}
+
+.nav-btn.active {
+  background: #0f3460;
+  color: #e2e8f0;
+  border-color: #4a90d9;
+}
+
+.dev-toggle-btn {
+  padding: 6px 14px;
+  height: 44px;
+  background: #0f3460;
+  color: #4a90d9;
+  border: 2px solid #4a90d9;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---------- Views ---------- */
+.view {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+.view.active {
+  display: flex;
+}
+
+/* ============================================================
+   View 1 — Core Vocabulary (Yes / No)
+   ============================================================ */
+#view-core-vocab {
+  flex-direction: row;
+}
+
+.vocab-btn {
+  flex: 1;
+  /* Fixed layout — never resize/reflow once rendered */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: none;
+  cursor: pointer;
+  /* Prevent any transition that could shift motor plan */
+  transition: none;
+}
+
+.yes-btn {
+  background: #2d6a2d;
+  border-right: 4px solid #1a1a2e;
+}
+
+.yes-btn:active {
+  background: #1e4d1e;
+}
+
+.no-btn {
+  background: #8b2020;
+  border-left: 4px solid #1a1a2e;
+}
+
+.no-btn:active {
+  background: #5c1515;
+}
+
+.vocab-btn .pictogram {
+  /* Fixed pixel size — no dynamic resize */
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.vocab-btn .btn-label {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   View 2 — Choice Board
+   ============================================================ */
+#view-choice-board {
+  flex-direction: column;
+}
+
+/* -- Display area (top strip) -- */
+#choice-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 16px;
+  height: 180px;
+  min-height: 180px;
+  background: #16213e;
+  border-bottom: 3px solid #0f3460;
+  flex-shrink: 0;
+}
+
+.choice-slot {
+  /* Fixed size — motor planning stability */
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  border: 3px solid #4a90d9;
+  border-radius: 12px;
+  background: #0f3460;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.choice-slot.empty {
+  border-style: dashed;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.choice-slot img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.choice-slot .slot-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  color: #e2e8f0;
+  margin-top: 4px;
+  line-height: 1.1;
+}
+
+.slot-placeholder {
+  font-size: 3.5rem;
+  color: #4a90d9;
+  opacity: 0.4;
+  line-height: 1;
+}
+
+#or-divider {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #4a90d9;
+  flex-shrink: 0;
+  letter-spacing: 0.1em;
+}
+
+.clear-btn {
+  padding: 10px 22px;
+  height: 44px;
+  background: #3a3a5c;
+  color: #c0c0d8;
+  border: 2px solid #5a5a8a;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: none;
+}
+
+.clear-btn:active {
+  background: #2a2a44;
+}
+
+/* -- Bank area (bottom grid) -- */
+#choice-bank {
+  flex: 1;
+  display: grid;
+  /* Always fill available width with consistent columns */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.bank-item {
+  /* Fixed height — no layout shift */
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #16213e;
+  border: 2px solid #0f3460;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 8px;
+  gap: 6px;
+  transition: none;
+}
+
+.bank-item:active {
+  background: #0f3460;
+  border-color: #4a90d9;
+}
+
+.bank-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.bank-item .item-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+/* Pictogram loading fade */
+.pict-loading {
+  opacity: 0.25;
+}
+
+/* ============================================================
+   Dev Tools panel
+   ============================================================ */
+#dev-tools-panel {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 420px;
+  max-width: 100vw;
+  height: 320px;
+  background: #080818;
+  border: 2px solid #4a90d9;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+#dev-tools-panel.hidden {
+  display: none;
+}
+
+#dev-tools-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: #16213e;
+  border-bottom: 1px solid #0f3460;
+  border-radius: 10px 10px 0 0;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4a90d9;
+  flex-shrink: 0;
+}
+
+#dev-tools-close {
+  background: none;
+  border: none;
+  color: #8080a0;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+#dev-log-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+#dev-log-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-log-entry {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #0e0e20;
+  color: #80d080;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.dev-log-entry .log-time {
+  color: #5050a0;
+  margin-right: 6px;
+}
+
+.dev-log-entry .log-type {
+  color: #90c0ff;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+#dev-tools-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background: #16213e;
+  border-top: 1px solid #0f3460;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #8080a0;
+  flex-shrink: 0;
+}
+
+#dev-clear-log {
+  background: #1e1e3a;
+  border: 1px solid #4a4a8a;
+  color: #8080d0;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+/* ============================================================
+   Orientation warning overlay
+   ============================================================ */
+#orientation-warning {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #1a1a2e;
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  padding: 24px;
+}
+
+#orientation-warning.visible {
+  display: flex;
+}
+
+.orient-icon {
+  font-size: 5rem;
+  animation: orientRotate 2s ease-in-out infinite;
+}
+
+@keyframes orientRotate {
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(90deg); }
+}
+
+#orientation-warning h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+#orientation-warning p {
+  font-size: 1.1rem;
+  color: #8090a8;
+}

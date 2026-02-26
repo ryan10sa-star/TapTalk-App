@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    maximum-scale=1 + user-scalable=no: prevent pinch-zoom.
+    touch-action:manipulation in CSS prevents double-tap zoom.
+  -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,
+                 maximum-scale=1.0, user-scalable=no" />
+
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description"
+        content="Offline-first Augmentative and Alternative Communication app" />
+
+  <title>TapTalk AAC</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ========================================================
+     Landscape orientation warning
+     Shown only when device is in portrait mode
+     ======================================================== -->
+<div id="orientation-warning" role="alert" aria-live="assertive">
+  <div class="orient-icon" aria-hidden="true">📱</div>
+  <h2>Please rotate your device</h2>
+  <p>TapTalk works best in landscape orientation</p>
+</div>
+
+<!-- ========================================================
+     App shell
+     ======================================================== -->
+<div id="app">
+
+  <!-- Navigation -->
+  <nav id="main-nav" aria-label="Main navigation">
+    <button class="nav-btn active"
+            data-view="core-vocab"
+            id="nav-core-vocab"
+            aria-current="page">
+      Core Vocabulary
+    </button>
+    <button class="nav-btn"
+            data-view="choice-board"
+            id="nav-choice-board">
+      Choice Board
+    </button>
+    <button id="dev-tools-toggle"
+            class="dev-toggle-btn"
+            aria-label="Toggle developer tools panel"
+            aria-controls="dev-tools-panel"
+            aria-expanded="false">
+      ⚙ Dev
+    </button>
+  </nav>
+
+  <!-- ======================================================
+       View 1 — Core Vocabulary (Yes / No)
+       Split screen: massive touch targets, fixed layout
+       ====================================================== -->
+  <section id="view-core-vocab"
+           class="view active"
+           aria-label="Core Vocabulary">
+
+    <button id="btn-yes"
+            class="vocab-btn yes-btn"
+            aria-label="Yes">
+      <img id="img-yes" class="pictogram" alt="Yes pictogram" />
+      <span class="btn-label">YES</span>
+    </button>
+
+    <button id="btn-no"
+            class="vocab-btn no-btn"
+            aria-label="No">
+      <img id="img-no" class="pictogram" alt="No pictogram" />
+      <span class="btn-label">NO</span>
+    </button>
+
+  </section>
+
+  <!-- ======================================================
+       View 2 — Choice Board (Tap-to-Fill)
+       ====================================================== -->
+  <section id="view-choice-board"
+           class="view"
+           aria-label="Choice Board">
+
+    <!-- Display area: two slots + OR divider + Clear -->
+    <div id="choice-display" role="region" aria-label="Choice display">
+      <div id="slot-1"
+           class="choice-slot empty"
+           role="button"
+           aria-label="Choice slot 1 — tap to speak"
+           tabindex="0">
+        <span class="slot-placeholder" aria-hidden="true">?</span>
+      </div>
+
+      <div id="or-divider" aria-hidden="true">OR</div>
+
+      <div id="slot-2"
+           class="choice-slot empty"
+           role="button"
+           aria-label="Choice slot 2 — tap to speak"
+           tabindex="0">
+        <span class="slot-placeholder" aria-hidden="true">?</span>
+      </div>
+
+      <button id="btn-clear" class="clear-btn" aria-label="Clear both choices">
+        Clear
+      </button>
+    </div>
+
+    <!-- Bank area: populated by app.js -->
+    <div id="choice-bank"
+         role="list"
+         aria-label="Vocabulary bank">
+    </div>
+
+  </section>
+
+</div><!-- /#app -->
+
+<!-- ========================================================
+     Dev Tools Panel
+     Real-time IndexedDB event log (proves data capture for
+     future Anderson-OS integration).
+     Hidden by default; toggle with the ⚙ Dev button.
+     ======================================================== -->
+<aside id="dev-tools-panel"
+       class="hidden"
+       aria-label="Developer tools — IndexedDB event log">
+
+  <div id="dev-tools-header">
+    <span>📊 IndexedDB Event Log</span>
+    <button id="dev-tools-close" aria-label="Close developer tools">✕</button>
+  </div>
+
+  <div id="dev-log-container" role="log" aria-live="polite">
+    <div id="dev-log-entries"></div>
+  </div>
+
+  <div id="dev-tools-footer">
+    <button id="dev-clear-log">Clear Display</button>
+    <span id="dev-event-count">0 events logged</span>
+  </div>
+
+</aside>
+
+<script src="app.js"></script>
+</body>
+</html>
