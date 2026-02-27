@@ -1,7 +1,13 @@
+@media (max-width: 599px) {
+  #choice-bank {
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+}
 /* ============================================================
    Tablet-First approach: landscape orientation first
    Media queries aligned with index.html breakpoints
-   ============================================================ */
+*/
 
 @media (min-width: 768px) and (max-width: 1023px) {
   /* Tablet landscape */
@@ -616,6 +622,8 @@ html, body {
    Settings Modal
    ============================================================ */
 #settings-modal {
+    overflow-y: auto;
+    max-height: 80vh;
   display: none;
   position: fixed;
   inset: 0;

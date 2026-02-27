@@ -4,12 +4,18 @@
   "description": "Offline-first Augmentative and Alternative Communication PWA",
   "private": true,
   "scripts": {
-    "fetch-images": "node fetch-aac-images.js",
-    "build": "vite build",
     "dev": "vite",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "deploy": "^1.1.0",
+    "run": "^1.5.0"
   }
 }

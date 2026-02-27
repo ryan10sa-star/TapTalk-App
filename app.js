@@ -243,9 +243,21 @@ const Pictogram = (() => {
       imgEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
       imgEl.alt = word;
     }
-  /** Path for a bundled PNG pictogram */
+  /**
+   * Helper function to try loading a pictogram with the given word.
+   * First tries to load [word].png, then falls back to [word].svg if that fails.
+   * @param {string} word - the word to load the pictogram for
+   * @returns {string} - the path to the loaded image, or null if none found
+   */
+  function _loadImagePath(word) {
+    const pngPath = _localPath(word) + '.png';
+    const svgPath = _localPath(word) + '.svg';
+    return fetch(pngPath).then(response => response.ok ? pngPath : fetch(svgPath).then(response => response.ok ? svgPath : null));
+  }
+  const imagePath = window.location.pathname.includes('TapTalk-App') ? '/TapTalk-App/aac-images/' : '/aac-images/';
+
   function _localPath(word) {
-    return `./aac-images/${word.toLowerCase()}.png`;
+    return `${imagePath}${word.toLowerCase()}.png`;
   }
 
   /**
@@ -255,9 +267,8 @@ const Pictogram = (() => {
   function load(imgEl, word) {
     imgEl.src = _localPath(word);
     imgEl.onerror = () => {
-      // Silent fail for missing image
       imgEl.onerror = null;
-      imgEl.removeAttribute('src');
+      _fallbackTile(imgEl, word);
     };
   }
 
@@ -420,7 +431,7 @@ const ChoiceBoard = (() => {
     const img = document.createElement('img');
     img.alt = word;
     slotEl.appendChild(img);
-    Pictogram.load(img, word.toLowerCase());
+    Pictogram.load(img, word);
 
     const lbl = document.createElement('span');
     lbl.className = 'slot-label';
@@ -483,7 +494,7 @@ const ChoiceBoard = (() => {
       div.appendChild(lbl);
       bank.appendChild(div);
 
-      Pictogram.load(img, word.toLowerCase());
+      Pictogram.load(img, word);
       /* Touch-event audit: using 'click' + global CSS touch-action:manipulation
        * eliminates the 300 ms delay without any touchstart listener, so there
        * is no risk of double-firing (no ghost clicks). */
@@ -800,16 +811,11 @@ const Settings = (() => {
       chk.checked = isOn;
       chk.addEventListener('change', () => lbl.classList.toggle('active', chk.checked));
 
-
       const img = document.createElement('img');
       img.className = 'settings-word-img';
-      img.src = `./aac-images/${word}.png`;
       img.alt = word;
-      img.onerror = () => {
-        // Silent fail for missing image
-        img.onerror = null;
-        Pictogram._fallbackTile ? Pictogram._fallbackTile(img, word) : img.style.display = 'none';
-      };
+      // Always use Pictogram.load for robust fallback
+      Pictogram.load(img, word);
 
       const span = document.createElement('span');
       span.className = 'settings-word-label';

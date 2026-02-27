@@ -3,7 +3,7 @@
    Cache-first Service Worker.  Works perfectly in airplane mode.
    ============================================================ */
 
-const CACHE_NAME = 'taptalk-v4';
+const CACHE_NAME = 'taptalk-v2';
 
 /** Static app-shell assets — must all be present; cached atomically on install */
 const STATIC_ASSETS = [
@@ -24,16 +24,15 @@ self.addEventListener('install', (event) => {
       /* App shell must all succeed — fail fast if any is missing */
       await cache.addAll(STATIC_ASSETS);
 
-      // Dynamically cache every AAC image listed in vocabulary.json as PNG only
+      // Explicitly cache all AAC images listed in vocabulary.json
       try {
         const vocabRes = await fetch('./aac-images/vocabulary.json');
         if (vocabRes.ok) {
           await cache.put('./aac-images/vocabulary.json', vocabRes.clone());
           const words = await vocabRes.json();
           if (Array.isArray(words) && words.length > 0) {
-            await Promise.allSettled(
-              words.map((word) => cache.add(`./aac-images/${word}.png`))
-            );
+            const imagePaths = words.map(word => `./aac-images/${word}.png`);
+            await Promise.allSettled(imagePaths.map(path => cache.add(path)));
           }
         }
       } catch (_) {
