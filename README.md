@@ -3,18 +3,30 @@ A mostly offline PWA to help with non verbal communications and learning
 
 ---
 
-## ✅ One step to go live
+## ✅ How to go live — step by step
 
-**Merge this Pull Request.**
-
-That's it. Merging puts all the app files (`index.html`, `styles.css`, `app.js`, images, etc.)
-onto the `main` branch. GitHub Pages is already configured to serve from `main / (root)`, so
-within about 1 minute of merging the app will be live at:
+Merging this Pull Request puts all the app files onto `main`.
+GitHub Pages is already watching `main`, so the app will be live within ~1 minute at:
 
 **https://ryan10sa-star.github.io/TapTalk-App/**
 
-You don't need to change any GitHub settings. You don't need to approve any workflow.
-Just click the green **Merge pull request** button on this PR.
+### Step 1 — Approve the PR (if you see "Review required")
+
+Because this PR was opened by the Copilot bot you need to approve it once as the repo owner:
+
+1. Scroll to the bottom of this PR page on GitHub.
+2. Click the **"Add your review"** button (or **"Review changes"** — same thing).
+3. Select **✅ Approve**.
+4. Click **"Submit review"**.
+
+That's it — you don't have to write anything in the comment box.
+
+### Step 2 — Merge
+
+Once approved, click the green **"Merge pull request"** button, then **"Confirm merge"**.
+
+Done. Wait about 60 seconds and visit **https://ryan10sa-star.github.io/TapTalk-App/** —
+the full AAC app will be there.
 
 ---
 
