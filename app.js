@@ -808,7 +808,12 @@ const Settings = (() => {
     btn.addEventListener('pointerdown', _start);
     btn.addEventListener('pointerup',   _cancel);
     btn.addEventListener('pointerleave', _cancel);
-    btn.addEventListener('pointercancel', _cancel);
+    /* NOTE: pointercancel is intentionally NOT bound to _cancel.
+     * On iOS/Android, the browser fires pointercancel after ~500 ms of a
+     * long-press (gesture pre-emption), which would abort the 3-second timer
+     * before it fires and prevent the Settings modal from ever opening.
+     * pointerleave still cancels the timer if the finger drifts off the button,
+     * and pointerup handles a deliberate short-press release. */
     /* Suppress the native context menu that appears on long-press (mobile) */
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
