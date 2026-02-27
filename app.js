@@ -231,18 +231,6 @@ const Speech = (() => {
    (browser picks the first matching <img src> that loads).
    ============================================================ */
 const Pictogram = (() => {
-    /** Generate a fallback tile with the first letter if image is missing */
-    function _fallbackTile(imgEl, word) {
-      const letter = word.charAt(0).toUpperCase();
-      const color = `hsl(${(word.charCodeAt(0) * 37) % 360}, 70%, 60%)`;
-      const svg =
-        `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'>` +
-        `<rect width='100' height='100' rx='18' fill='${color}'/>` +
-        `<text x='50' y='62' text-anchor='middle' font-size='56' fill='#fff' font-family='Arial' dy='.3em'>${letter}</text>` +
-        `</svg>`;
-      imgEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-      imgEl.alt = word;
-    }
   /**
    * Helper function to try loading a pictogram with the given word.
    * First tries to load [word].png, then falls back to [word].svg if that fails.
@@ -253,17 +241,11 @@ const Pictogram = (() => {
   const basePath = isGitHub ? 'TapTalk-App/' : '';
 
   function _loadImagePath(word) {
-    const pngPath = `${basePath}aac-images/${word.toLowerCase()}.png`;
-    const svgPath = `${basePath}aac-images/${word.toLowerCase()}.svg`;
-    return fetch(pngPath).then(response => response.ok ? pngPath : fetch(svgPath).then(response => response.ok ? svgPath : null));
+    return `${basePath}aac-images/${word.toLowerCase()}.png`;
   }
 
   const getImagePath = (word) => {
-    const fullPath = `${basePath}aac-images/${word.toLowerCase()}.png`;
-    return fetch(fullPath).then(response => response.ok ? fullPath : null).catch(() => {
-      console.error('Image missing:', fullPath);
-      return null;
-    });
+    return `${basePath}aac-images/${word.toLowerCase()}.png`;
   };
 
   function _localPath(word) {
@@ -276,10 +258,9 @@ const Pictogram = (() => {
    */
   function load(imgEl, word) {
     imgEl.src = _localPath(word);
-    imgEl.onerror = () => {
-      imgEl.onerror = null;
-      _fallbackTile(imgEl, word);
-    };
+    imgEl.alt = word;
+    // No fallback: let the browser show the broken image icon if missing
+    imgEl.onerror = null;
   }
 
   /** Return the local path for a word (used when filling choice slots) */

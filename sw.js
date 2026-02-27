@@ -75,20 +75,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          /* Offline fallback: return an SVG placeholder for image requests */
-          if (
-            event.request.destination === 'image' ||
-            event.request.url.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i)
-          ) {
-            return new Response(
-              `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
-                 <rect width="100" height="100" fill="#1a1a2e" rx="10"/>
-                 <text x="50" y="58" text-anchor="middle" fill="#4a90d9"
-                       font-size="11" font-family="sans-serif">Offline</text>
-               </svg>`,
-              { headers: { 'Content-Type': 'image/svg+xml' } }
-            );
-          }
+          // No offline fallback: let the browser show the broken image icon for missing images
         });
     })
   );
