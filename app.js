@@ -15,6 +15,7 @@ const CONFIG = Object.freeze({
   STORE_EVENTS: 'events',
   BANK_ITEMS: ['Rocks', 'Ball', 'Walk', 'Coloring', 'Book', 'Math', 'Writing'],
   CORE_VOCAB: ['Yes', 'No'],
+  TURN_VOCAB: ['my-turn', 'your-turn'],
 });
 
 /* ============================================================
@@ -25,10 +26,51 @@ const SESSION_ID = (typeof crypto !== 'undefined' && crypto.randomUUID)
   : `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 /* ============================================================
+   PARTNER MODE MODULE
+   Activated by the teacher for Aided Language Stimulation.
+   All DB events logged while active carry user:'partner' so
+   they are excluded from student analytics.
+   ============================================================ */
+const PartnerMode = (() => {
+  let _active = false;
+
+  function isActive() { return _active; }
+
+  function _applyVisual() {
+    const app = document.getElementById('app');
+    const btn = document.getElementById('partner-mode-toggle');
+    if (_active) {
+      app.classList.add('partner-mode');
+      btn.textContent = '🔓';
+      btn.setAttribute('aria-pressed', 'true');
+      btn.title = 'Partner Mode ON — tap to disable';
+    } else {
+      app.classList.remove('partner-mode');
+      btn.textContent = '🔒';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.title = 'Enable Partner Mode';
+    }
+  }
+
+  function toggle() {
+    _active = !_active;
+    _applyVisual();
+    DB.log('partner_mode_changed', { active: _active });
+  }
+
+  function init() {
+    document.getElementById('partner-mode-toggle').addEventListener('click', toggle);
+    _applyVisual();
+  }
+
+  return { isActive, init };
+})();
+
+/* ============================================================
    DATABASE MODULE
    Stores every user interaction locally.
    Schema is designed so Anderson-OS can ingest the data later:
-     { id, timestamp, sessionId, type, data }
+     { id, timestamp, sessionId, type, data, user }
    ============================================================ */
 const DB = (() => {
   let _db = null;
@@ -68,6 +110,7 @@ const DB = (() => {
       sessionId: SESSION_ID,
       type,
       data,
+      user: PartnerMode.isActive() ? 'partner' : 'student',
     };
 
     if (!_db) {
@@ -391,6 +434,30 @@ const ChoiceBoard = (() => {
 })();
 
 /* ============================================================
+   TURN TAKING MODULE  (persistent footer)
+   "My Turn" and "Your Turn" buttons help the communication
+   partner model turn-taking during aided language stimulation.
+   These are always visible regardless of the active view.
+   ============================================================ */
+const TurnTaking = (() => {
+  function init() {
+    CONFIG.TURN_VOCAB.forEach((id) => {
+      const spoken = id.replace('-', ' ');
+      const btn = document.getElementById(`btn-${id}`);
+      const img = document.getElementById(`img-${id}`);
+      Pictogram.load(img, id);
+      btn.addEventListener('click', () => {
+        Speech.speak(spoken);
+        DB.log('vocabulary_use', { word: spoken, category: 'turn_taking' });
+        window.CommDB?.logEvent('single_word', { words: [spoken], view: 'turn-taking' });
+      });
+    });
+  }
+
+  return { init };
+})();
+
+/* ============================================================
    ORIENTATION MODULE
    ============================================================ */
 const Orientation = (() => {
@@ -446,8 +513,10 @@ async function init() {
   }
 
   Views.init();
+  PartnerMode.init();
   CoreVocab.init();
   ChoiceBoard.init();
+  TurnTaking.init();
   DevTools.init();
   Orientation.init();
 
@@ -471,5 +540,8 @@ window.TapTalk = {
   /** Returns a Promise<Array> of all logged events */
   exportData: () => DB.getAll(),
 };
+
+/* Also expose PartnerMode globally so db.js can read the active state */
+window.PartnerMode = PartnerMode;
 
 document.addEventListener('DOMContentLoaded', init);

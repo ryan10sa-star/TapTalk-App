@@ -58,6 +58,12 @@
             id="nav-dev-preview">
       ⚙ Dev Preview
     </button>
+    <button id="partner-mode-toggle"
+            aria-pressed="false"
+            aria-label="Toggle Partner Mode"
+            title="Enable Partner Mode">
+      🔒
+    </button>
   </nav>
 
   <!-- ======================================================
@@ -166,6 +172,28 @@
     </div>
 
   </section>
+
+  <!-- ======================================================
+       Persistent footer — Turn Taking
+       Always visible; supports communication partner modeling.
+       ====================================================== -->
+  <footer id="turn-footer" aria-label="Turn taking">
+
+    <button id="btn-my-turn"
+            class="turn-btn"
+            aria-label="My Turn">
+      <img id="img-my-turn" class="turn-pict" alt="My Turn pictogram" />
+      <span class="turn-label">MY TURN</span>
+    </button>
+
+    <button id="btn-your-turn"
+            class="turn-btn"
+            aria-label="Your Turn">
+      <img id="img-your-turn" class="turn-pict" alt="Your Turn pictogram" />
+      <span class="turn-label">YOUR TURN</span>
+    </button>
+
+  </footer>
 
 </div><!-- /#app -->
 

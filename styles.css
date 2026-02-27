@@ -484,3 +484,89 @@ html, body {
   font-size: 1.1rem;
   color: #666;
 }
+
+/* ============================================================
+   Partner Mode — visual indicator
+   ============================================================ */
+
+/* Blue ring inset on the entire app shell — zero layout impact */
+#app.partner-mode {
+  outline: 8px solid #2196F3;
+  outline-offset: -8px;
+}
+
+/* Partner mode toggle button in the nav */
+#partner-mode-toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  transition: none;
+  padding: 0;
+}
+
+#partner-mode-toggle[aria-pressed="true"] {
+  background: #2196F3;
+  border-color: #1565c0;
+  color: #fff;
+}
+
+/* ============================================================
+   Turn Taking footer — persistent across all views
+   ============================================================ */
+#turn-footer {
+  display: flex;
+  height: 80px;
+  min-height: 80px;
+  flex-shrink: 0;
+  border-top: 3px solid #ccc;
+  background: #eeeeee;
+}
+
+.turn-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 900;
+  font-family: inherit;
+  /* Instant feedback */
+  transition: background-color 40ms;
+}
+
+.turn-btn:first-child {
+  background: #e3f2fd;
+  border-right: 2px solid #ccc;
+}
+
+.turn-btn:last-child {
+  background: #f3e5f5;
+}
+
+.turn-btn:active {
+  filter: brightness(0.88);
+}
+
+.turn-pict {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.turn-label {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #333;
+}

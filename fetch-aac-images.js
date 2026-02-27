@@ -22,10 +22,22 @@ const fs   = require('fs');
 const path = require('path');
 const https = require('https');
 
-/* Core vocabulary to download.
- * Must mirror CONFIG.CORE_VOCAB + CONFIG.BANK_ITEMS in app.js (all lowercase).
+/* Vocabulary to download.  Map of filename (no ext) → ARASAAC search term.
+ * Must mirror CONFIG.CORE_VOCAB + CONFIG.BANK_ITEMS + TurnTaking words in app.js.
  * Keep these in sync when the vocabulary changes. */
-const WORDS = ['yes', 'no', 'rocks', 'ball', 'walk', 'coloring', 'book', 'math', 'writing'];
+const WORDS = {
+  'yes':       'yes',
+  'no':        'no',
+  'rocks':     'rocks',
+  'ball':      'ball',
+  'walk':      'walk',
+  'coloring':  'coloring',
+  'book':      'book',
+  'math':      'math',
+  'writing':   'writing',
+  'my-turn':   'my turn',
+  'your-turn': 'your turn',
+};
 
 const SEARCH_BASE = 'https://api.arasaac.org/api/pictograms/en/search/';
 const IMG_BASE    = 'https://static.arasaac.org/pictograms/';
@@ -68,13 +80,14 @@ function downloadFile(url, dest) {
 }
 
 async function main() {
-  console.log(`Downloading ${WORDS.length} ARASAAC pictograms → ${OUT_DIR}\n`);
+  const entries = Object.entries(WORDS);
+  console.log(`Downloading ${entries.length} ARASAAC pictograms → ${OUT_DIR}\n`);
   let ok = 0;
   let failed = 0;
 
-  for (const word of WORDS) {
-    const searchUrl = `${SEARCH_BASE}${encodeURIComponent(word)}`;
-    process.stdout.write(`  ${word.padEnd(10)} … `);
+  for (const [word, searchTerm] of entries) {
+    const searchUrl = `${SEARCH_BASE}${encodeURIComponent(searchTerm)}`;
+    process.stdout.write(`  ${word.padEnd(12)} … `);
 
     let id;
     try {

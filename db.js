@@ -62,6 +62,7 @@ const CommDB = (() => {
       eventType,
       words: Array.isArray(payload.words) ? payload.words : [],
       view:  payload.view  || '',
+      user:  window.PartnerMode?.isActive() ? 'partner' : 'student',
     };
 
     try {
