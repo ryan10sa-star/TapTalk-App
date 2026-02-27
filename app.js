@@ -130,7 +130,7 @@ const DB = (() => {
       DevTools.append(entry);
     };
 
-    req.onerror = () => console.error('[TapTalk] Failed to persist event');
+    req.onerror = () => console.warn('[TapTalk] Failed to persist event — app continues normally');
   }
 
   function getAll() {
@@ -150,6 +150,21 @@ const DB = (() => {
    SPEECH MODULE
    ============================================================ */
 const Speech = (() => {
+  let _unlocked = false;
+
+  /**
+   * Fire a silent zero-volume utterance to physically unlock the audio
+   * context on iOS / Android, where speechSynthesis requires a user gesture
+   * before it will produce any audio.  Called once on the first interaction.
+   */
+  function _unlock() {
+    if (_unlocked || !window.speechSynthesis) return;
+    _unlocked = true;
+    const silent = new SpeechSynthesisUtterance('');
+    silent.volume = 0;
+    window.speechSynthesis.speak(silent);
+  }
+
   function speak(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -168,7 +183,19 @@ const Speech = (() => {
     window.speechSynthesis.speak(utt);
   }
 
-  return { speak };
+  function init() {
+    /* Force the browser to populate the voices list immediately.
+     * Chrome / Edge load voices asynchronously; calling getVoices() on
+     * window load triggers that population before the teacher opens Settings. */
+    window.addEventListener('load', () => window.speechSynthesis?.getVoices());
+
+    /* Unlock audio context on the very first user interaction.
+     * Using capture so this fires before any child handler, and { once }
+     * so the listener removes itself automatically after the first tap. */
+    document.addEventListener('pointerdown', _unlock, { once: true, capture: true });
+  }
+
+  return { speak, init };
 })();
 
 /* ============================================================
@@ -420,6 +447,9 @@ const ChoiceBoard = (() => {
       bank.appendChild(div);
 
       Pictogram.load(img, word.toLowerCase());
+      /* Touch-event audit: using 'click' + global CSS touch-action:manipulation
+       * eliminates the 300 ms delay without any touchstart listener, so there
+       * is no risk of double-firing (no ghost clicks). */
       div.addEventListener('click', () => _handleBankClick(word));
     });
   }
@@ -744,6 +774,7 @@ async function init() {
 
   Views.init();
   PartnerMode.init();
+  Speech.init();
   CoreVocab.init();
   ChoiceBoard.init();
   TurnTaking.init();

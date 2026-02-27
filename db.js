@@ -44,7 +44,7 @@ const CommDB = (() => {
       };
 
       req.onerror = (e) => {
-        console.error('[TapTalkDB] Open error:', e.target.error);
+        console.warn('[TapTalkDB] Open error — logging disabled, app continues normally:', e.target.error);
         reject(e.target.error);
       };
     });
@@ -70,7 +70,7 @@ const CommDB = (() => {
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).add(record);
     } catch (err) {
-      console.error('[TapTalkDB] logEvent failed:', err);
+      console.warn('[TapTalkDB] logEvent failed — app continues normally:', err);
     }
   }
 

@@ -3,7 +3,7 @@
    Cache-first Service Worker.  Works perfectly in airplane mode.
    ============================================================ */
 
-const CACHE_NAME = 'taptalk-v3';
+const CACHE_NAME = 'taptalk-v4';
 
 /** Static app-shell assets — must all be present; cached atomically on install */
 const STATIC_ASSETS = [
@@ -16,33 +16,36 @@ const STATIC_ASSETS = [
   './icon.svg',
 ];
 
-/**
- * AAC pictogram images — populated by `npm run fetch-images` before deploy.
- * Cached individually with allSettled so a missing file never breaks install.
- */
-const AAC_IMAGE_ASSETS = [
-  './aac-images/yes.png',
-  './aac-images/no.png',
-  './aac-images/rocks.png',
-  './aac-images/ball.png',
-  './aac-images/walk.png',
-  './aac-images/coloring.png',
-  './aac-images/book.png',
-  './aac-images/math.png',
-  './aac-images/writing.png',
-];
-
 /* ---------- Install: pre-cache shell + AAC images ---------- */
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       /* App shell must all succeed — fail fast if any is missing */
       await cache.addAll(STATIC_ASSETS);
-      /* AAC images are populated at build time; tolerate missing files
-         so the SW still installs cleanly in a fresh dev checkout */
-      await Promise.allSettled(
-        AAC_IMAGE_ASSETS.map((url) => cache.add(url))
-      );
+
+      /* Dynamically cache every AAC image listed in vocabulary.json.
+       * This replaces the old hardcoded AAC_IMAGE_ASSETS array so the SW
+       * automatically covers the full 100+ word library (and any future
+       * additions) without manual maintenance.
+       * Uses allSettled so a single missing file never blocks SW install. */
+      try {
+        const vocabRes = await fetch('./aac-images/vocabulary.json');
+        if (vocabRes.ok) {
+          await cache.put('./aac-images/vocabulary.json', vocabRes.clone());
+          const words = await vocabRes.json();
+          if (Array.isArray(words) && words.length > 0) {
+            await Promise.allSettled(
+              words.flatMap((word) => [
+                cache.add(`./aac-images/${word}.png`),
+                cache.add(`./aac-images/${word}.svg`),
+              ])
+            );
+          }
+        }
+      } catch (_) {
+        /* vocabulary.json not yet generated (fresh checkout / CI) —
+         * images will be cached on first network access via the fetch handler */
+      }
     })
   );
   self.skipWaiting();
