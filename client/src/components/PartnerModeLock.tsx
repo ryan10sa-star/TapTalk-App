@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Lock, Unlock } from "lucide-react";
+import { playSfx } from "@/lib/audio";
 
 interface PartnerModeLockProps {
   locked: boolean;
@@ -26,6 +27,7 @@ export function PartnerModeLock({ locked, onToggle }: PartnerModeLockProps) {
       clearInterval(progressTimer.current!);
       setHolding(false);
       setProgress(0);
+      playSfx(locked ? "unlock" : "lock");
       onToggle();
     }, HOLD_DURATION);
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { speakWord } from "@/lib/audio";
+import { speakWord, playSfx } from "@/lib/audio";
 import { Edit2, Check, Timer, Play, Pause, RotateCcw, ChevronDown, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -143,6 +143,7 @@ export default function VisualSchedule() {
           if (s <= 1) {
             setTimerRunning(false);
             clearInterval(timerRef.current!);
+            playSfx("timer-done");
             speakWord("Time is up!");
             return 0;
           }
@@ -175,8 +176,12 @@ export default function VisualSchedule() {
     speakWord(label);
     setCompletedSlots((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+        playSfx("schedule-done");
+      }
       return next;
     });
   }, [editMode]);

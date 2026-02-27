@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { speakWord, playCelebrationSound } from "@/lib/audio";
+import { speakWord, playSfx, playCelebrationSound } from "@/lib/audio";
 import { RefreshCw, Settings, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings, hapticTap } from "@/lib/settingsContext";
@@ -119,12 +119,14 @@ export default function TokenBoard() {
     hapticTap(settings.hapticEnabled, 35);
     const newCount = count + 1;
     setCount(newCount);
+    playSfx("token-earn");
     speakWord("Token");
 
     if (newCount === TOTAL_TOKENS) {
       setTimeout(() => {
         setCelebrating(true);
         speakWord(`Reward earned! Time for ${selectedReward}!`);
+        playSfx("reward-fanfare", { highEnergy: true });
         playCelebrationSound();
         hapticTap(settings.hapticEnabled, [100, 50, 100, 50, 300]);
         setTimeout(() => setCelebrating(false), 4000);

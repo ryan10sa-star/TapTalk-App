@@ -1,4 +1,5 @@
 const audioCache = new Map<string, HTMLAudioElement>();
+const sfxCache = new Map<string, HTMLAudioElement>();
 const preloadQueue = new Set<string>();
 
 let _highEnergyEnabled = true;
@@ -47,6 +48,32 @@ export function speakWord(word: string): void {
   tryPath(0);
 }
 
+export type SfxName =
+  | "token-earn"
+  | "reward-fanfare"
+  | "timer-done"
+  | "schedule-done"
+  | "lock"
+  | "unlock";
+
+export function playSfx(name: SfxName, options?: { highEnergy?: boolean }): void {
+  if (options?.highEnergy && !_highEnergyEnabled) return;
+
+  const path = `/aac-audio/sfx/${name}.mp3`;
+
+  if (sfxCache.has(path)) {
+    const audio = sfxCache.get(path)!;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+    return;
+  }
+
+  const audio = new Audio(path);
+  audio.oncanplaythrough = () => { sfxCache.set(path, audio); };
+  audio.onerror = () => {};
+  audio.play().catch(() => {});
+}
+
 export function previewVoice(voiceSlug: string, word = "Hello"): void {
   const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
   const path = `/aac-audio/${voiceSlug}/${fileName}.mp3`;
@@ -89,6 +116,18 @@ export function preloadAudio(words: string[]): void {
   });
 }
 
+export function preloadSfx(names: SfxName[]): void {
+  names.forEach((name) => {
+    const path = `/aac-audio/sfx/${name}.mp3`;
+    if (sfxCache.has(path)) return;
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.src = path;
+    audio.oncanplaythrough = () => { sfxCache.set(path, audio); };
+    audio.onerror = () => {};
+  });
+}
+
 function fallbackSpeak(text: string): void {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
@@ -106,4 +145,5 @@ function fallbackSpeak(text: string): void {
 
 export function clearAudioCache(): void {
   audioCache.clear();
+  sfxCache.clear();
 }

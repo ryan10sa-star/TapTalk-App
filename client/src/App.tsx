@@ -15,7 +15,7 @@ import { PartnerProvider } from "@/lib/partnerContext";
 import { SettingsProvider, useSettings } from "@/lib/settingsContext";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Settings as GearIcon } from "lucide-react";
-import { setAudioHighEnergy, setActiveVoiceSlug } from "@/lib/audio";
+import { setAudioHighEnergy, setActiveVoiceSlug, preloadSfx } from "@/lib/audio";
 
 function Router() {
   return (
@@ -40,6 +40,10 @@ function AppShell() {
   useEffect(() => {
     setActiveVoiceSlug(settings.selectedVoiceSlug);
   }, [settings.selectedVoiceSlug]);
+
+  useEffect(() => {
+    preloadSfx(["token-earn", "reward-fanfare", "timer-done", "schedule-done", "lock", "unlock"]);
+  }, []);
   const [gearProgress, setGearProgress] = useState(0);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
