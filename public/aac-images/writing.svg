@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- pencil body (angled) -->
+  <g transform="rotate(-40,50,50)">
+    <!-- eraser -->
+    <rect x="43" y="6" width="14" height="9" rx="2" fill="#ef9a9a"/>
+    <!-- ferrule (metal band) -->
+    <rect x="43" y="15" width="14" height="6" fill="#bdbdbd"/>
+    <!-- body -->
+    <rect x="43" y="21" width="14" height="46" fill="#fff176"/>
+    <!-- wood tip -->
+    <polygon points="43,67 57,67 50,82" fill="#ffcc80"/>
+    <!-- graphite tip -->
+    <polygon points="46,73 54,73 50,82" fill="#616161"/>
+  </g>
+  <!-- writing lines -->
+  <line x1="14" y1="72" x2="58" y2="72" stroke="#37474f" stroke-width="3" stroke-linecap="round"/>
+  <line x1="14" y1="81" x2="50" y2="81" stroke="#37474f" stroke-width="3" stroke-linecap="round"/>
+  <line x1="14" y1="90" x2="62" y2="90" stroke="#37474f" stroke-width="3" stroke-linecap="round"/>
+</svg>

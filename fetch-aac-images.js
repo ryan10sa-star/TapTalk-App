@@ -2,8 +2,13 @@
 /**
  * fetch-aac-images.js
  *
- * Build-time script: downloads ARASAAC pictograms for every word in the
- * core vocabulary and saves them to public/aac-images/{word}.png.
+ * Optional script: downloads higher-quality ARASAAC pictograms for every
+ * word in the core vocabulary and saves them to public/aac-images/{word}.png.
+ *
+ * The app ships bundled SVG pictograms for all vocabulary words and works
+ * fully offline without running this script. Run it only if you want to
+ * upgrade to the official ARASAAC artwork (requires internet access).
+ * Downloaded PNGs are gitignored and must be re-fetched after a clean clone.
  *
  * Usage:  node fetch-aac-images.js
  *         npm run fetch-images
