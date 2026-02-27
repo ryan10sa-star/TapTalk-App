@@ -1,10 +1,29 @@
-const audioCache = new Map<string, HTMLAudioElement>();
+// TapTalk AAC — Audio Engine
+// Uses a 3-element pool for speech to prevent construction overhead on rapid taps.
+// Preloaded audio is served from the word cache for zero-latency repeat taps.
+
+const wordCache = new Map<string, HTMLAudioElement>();
 const sfxCache = new Map<string, HTMLAudioElement>();
 const preloadQueue = new Set<string>();
 
 let _highEnergyEnabled = true;
 let _activeVoiceSlug = "sarah";
-let _currentAudio: HTMLAudioElement | null = null;
+let _currentSpeech: HTMLAudioElement | null = null;
+
+// Pre-allocate 3 Audio objects at module load — avoids construction overhead on first tap
+const POOL_SIZE = 3;
+const speechPool: HTMLAudioElement[] = Array.from({ length: POOL_SIZE }, () => {
+  const a = new Audio();
+  a.preload = "none";
+  return a;
+});
+let _poolIndex = 0;
+
+function nextPoolAudio(): HTMLAudioElement {
+  const audio = speechPool[_poolIndex];
+  _poolIndex = (_poolIndex + 1) % POOL_SIZE;
+  return audio;
+}
 
 export function setAudioHighEnergy(enabled: boolean) {
   _highEnergyEnabled = enabled;
@@ -13,8 +32,16 @@ export function setAudioHighEnergy(enabled: boolean) {
 export function setActiveVoiceSlug(slug: string) {
   if (_activeVoiceSlug !== slug) {
     _activeVoiceSlug = slug;
-    audioCache.clear();
+    wordCache.clear();
   }
+}
+
+function resolveAudioPaths(word: string): string[] {
+  const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+  return [
+    `/aac-audio/${_activeVoiceSlug}/${fileName}.mp3`,
+    `/aac-audio/${fileName}.mp3`,
+  ];
 }
 
 function fadeIn(audio: HTMLAudioElement, targetVol = 1.0, durationMs = 5): void {
@@ -42,37 +69,40 @@ function fadeOut(audio: HTMLAudioElement, durationMs = 5, onDone?: () => void): 
       setTimeout(tick, stepMs);
     } else {
       audio.pause();
-      audio.currentTime = 0;
       onDone?.();
     }
   };
   setTimeout(tick, 1);
 }
 
-function playWithFade(audio: HTMLAudioElement): void {
-  if (_currentAudio && _currentAudio !== audio && !_currentAudio.paused) {
-    fadeOut(_currentAudio, 5, () => {
-      _currentAudio = audio;
+function playAudio(audio: HTMLAudioElement): void {
+  if (_currentSpeech && _currentSpeech !== audio && !_currentSpeech.paused) {
+    fadeOut(_currentSpeech, 5, () => {
+      _currentSpeech = audio;
       fadeIn(audio);
       audio.play().catch(() => {});
     });
   } else {
-    _currentAudio = audio;
+    _currentSpeech = audio;
+    audio.currentTime = 0;
     fadeIn(audio);
     audio.play().catch(() => {});
   }
 }
 
-function resolveAudioPath(word: string): string[] {
-  const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
-  return [
-    `/aac-audio/${_activeVoiceSlug}/${fileName}.mp3`,
-    `/aac-audio/${fileName}.mp3`,
-  ];
-}
-
 export function speakWord(word: string): void {
-  const paths = resolveAudioPath(word);
+  const paths = resolveAudioPaths(word);
+
+  // Fast path: cached element (preloaded — zero latency)
+  for (const path of paths) {
+    if (wordCache.has(path)) {
+      playAudio(wordCache.get(path)!);
+      return;
+    }
+  }
+
+  // Pool path: reuse a pre-created Audio object (avoids new Audio() overhead)
+  const poolAudio = nextPoolAudio();
 
   const tryPath = (index: number) => {
     if (index >= paths.length) {
@@ -80,16 +110,10 @@ export function speakWord(word: string): void {
       return;
     }
     const path = paths[index];
-    if (audioCache.has(path)) {
-      const audio = audioCache.get(path)!;
-      audio.currentTime = 0;
-      playWithFade(audio);
-      return;
-    }
-    const audio = new Audio(path);
-    audio.onerror = () => tryPath(index + 1);
-    audio.oncanplaythrough = () => { audioCache.set(path, audio); };
-    playWithFade(audio);
+    poolAudio.onerror = null;
+    poolAudio.onerror = () => tryPath(index + 1);
+    poolAudio.src = path;
+    playAudio(poolAudio);
   };
 
   tryPath(0);
@@ -155,14 +179,17 @@ export function playCelebrationSound(): void {
 
 export function preloadAudio(words: string[]): void {
   words.forEach((word) => {
-    const paths = resolveAudioPath(word);
+    const paths = resolveAudioPaths(word);
     const primary = paths[0];
-    if (audioCache.has(primary) || preloadQueue.has(primary)) return;
+    if (wordCache.has(primary) || preloadQueue.has(primary)) return;
     preloadQueue.add(primary);
     const audio = new Audio();
     audio.preload = "auto";
     audio.src = primary;
-    audio.oncanplaythrough = () => { audioCache.set(primary, audio); preloadQueue.delete(primary); };
+    audio.oncanplaythrough = () => {
+      wordCache.set(primary, audio);
+      preloadQueue.delete(primary);
+    };
     audio.onerror = () => { preloadQueue.delete(primary); };
   });
 }
@@ -195,6 +222,6 @@ function fallbackSpeak(text: string): void {
 }
 
 export function clearAudioCache(): void {
-  audioCache.clear();
+  wordCache.clear();
   sfxCache.clear();
 }

@@ -1,21 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { speakWord, playSfx, playCelebrationSound } from "@/lib/audio";
-import { RefreshCw, Settings, CheckCircle2 } from "lucide-react";
+import { RefreshCw, ThumbsUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings, hapticTap } from "@/lib/settingsContext";
 
 const TOTAL_TOKENS = 5;
-
-const REWARD_POOL = [
-  { label: "Kinetic Sand", color: "#D97706" },
-  { label: "Bubbles", color: "#0891B2" },
-  { label: "Swing", color: "#059669" },
-  { label: "Playdough", color: "#7C3AED" },
-  { label: "Movie Time", color: "#374151" },
-  { label: "Snack", color: "#EA580C" },
-  { label: "Free Play", color: "#2563EB" },
-  { label: "iPad Time", color: "#6D28D9" },
-];
 
 function Confetti() {
   const colors = ["#F59E0B", "#2563EB", "#DC2626", "#059669", "#7C3AED", "#DB2777", "#EA580C", "#0891B2"];
@@ -23,10 +12,10 @@ function Confetti() {
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden" aria-hidden="true">
       {Array.from({ length: 48 }).map((_, i) => {
         const color = colors[i % colors.length];
-        const left = `${Math.random() * 100}%`;
-        const delay = `${Math.random() * 0.8}s`;
-        const duration = `${1.2 + Math.random() * 1}s`;
-        const size = `${6 + Math.random() * 8}px`;
+        const left = `${(i * 2.08) % 100}%`;
+        const delay = `${(i * 0.017) % 0.8}s`;
+        const duration = `${1.2 + (i % 10) * 0.1}s`;
+        const size = `${6 + (i % 8)}px`;
         return (
           <div
             key={i}
@@ -38,7 +27,7 @@ function Confetti() {
               height: size,
               backgroundColor: color,
               animation: `confettiFall ${duration} ${delay} ease-in forwards`,
-              transform: `rotate(${Math.random() * 360}deg)`,
+              transform: `rotate(${i * 7.5}deg)`,
             }}
           />
         );
@@ -46,7 +35,7 @@ function Confetti() {
       <style>{`
         @keyframes confettiFall {
           0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(110vh) rotate(${Math.random() * 720}deg); opacity: 0; }
+          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
       `}</style>
     </div>
@@ -58,7 +47,7 @@ function TokenSlot({ filled, index, onClick }: { filled: boolean; index: number;
     <button
       onClick={onClick}
       data-testid={`token-slot-${index}`}
-      aria-label={filled ? `Token ${index + 1} earned` : `Token ${index + 1} - tap to add`}
+      aria-label={filled ? `Token ${index + 1} earned` : `Token ${index + 1} — tap to add`}
       className="relative focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 rounded-full"
       style={{ cursor: filled ? "default" : "pointer" }}
     >
@@ -96,20 +85,8 @@ export default function TokenBoard() {
     try { return parseInt(localStorage.getItem("taptalk-tokens") ?? "0", 10); } catch { return 0; }
   });
   const [celebrating, setCelebrating] = useState(false);
-  const [selectedReward, setSelectedReward] = useState<string>(() => {
-    try { return localStorage.getItem("taptalk-reward") ?? REWARD_POOL[0].label; } catch { return REWARD_POOL[0].label; }
-  });
-  const [showRewardPicker, setShowRewardPicker] = useState(false);
 
-  const currentReward = REWARD_POOL.find((r) => r.label === selectedReward) ?? REWARD_POOL[0];
-
-  useEffect(() => {
-    try { localStorage.setItem("taptalk-tokens", String(count)); } catch {}
-  }, [count]);
-
-  useEffect(() => {
-    try { localStorage.setItem("taptalk-reward", selectedReward); } catch {}
-  }, [selectedReward]);
+  const rewardName = settings.rewardLabel.trim() || null;
 
   const handleSlotTap = useCallback((index: number) => {
     if (celebrating) return;
@@ -119,24 +96,26 @@ export default function TokenBoard() {
     hapticTap(settings.hapticEnabled, 35);
     const newCount = count + 1;
     setCount(newCount);
+    try { localStorage.setItem("taptalk-tokens", String(newCount)); } catch {}
     playSfx("token-earn");
     speakWord("Token");
 
     if (newCount === TOTAL_TOKENS) {
       setTimeout(() => {
         setCelebrating(true);
-        speakWord(`Reward earned! Time for ${selectedReward}!`);
+        speakWord(rewardName ? `Reward earned! Time for ${rewardName}!` : "Great job! Reward earned!");
         playSfx("reward-fanfare", { highEnergy: true });
         playCelebrationSound();
         hapticTap(settings.hapticEnabled, [100, 50, 100, 50, 300]);
         setTimeout(() => setCelebrating(false), 4000);
       }, 300);
     }
-  }, [count, celebrating, selectedReward, settings.hapticEnabled]);
+  }, [count, celebrating, rewardName, settings.hapticEnabled]);
 
   const handleReset = useCallback(() => {
     setCount(0);
     setCelebrating(false);
+    try { localStorage.setItem("taptalk-tokens", "0"); } catch {}
     speakWord("Let's earn more tokens!");
   }, []);
 
@@ -149,39 +128,7 @@ export default function TokenBoard() {
           <h1 className="font-black text-lg text-slate-800">Token Board</h1>
           <p className="text-xs text-amber-700 font-medium">Earn {TOTAL_TOKENS} tokens for your reward!</p>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => setShowRewardPicker(!showRewardPicker)}
-          data-testid="button-pick-reward"
-          aria-label="Pick reward"
-        >
-          <Settings size={18} />
-        </Button>
       </div>
-
-      {showRewardPicker && (
-        <div className="shrink-0 bg-amber-50 border-b p-3" style={{ borderColor: "#FDE68A" }}>
-          <p className="text-xs font-bold text-amber-800 mb-2 uppercase tracking-wide">Working for:</p>
-          <div className="flex flex-wrap gap-2">
-            {REWARD_POOL.map((r) => (
-              <button
-                key={r.label}
-                onClick={() => { setSelectedReward(r.label); setShowRewardPicker(false); }}
-                data-testid={`reward-option-${r.label.toLowerCase().replace(/\s+/g, "-")}`}
-                className="px-3 py-1.5 rounded-lg text-sm font-bold border-2 transition-all"
-                style={{
-                  borderColor: r.color,
-                  backgroundColor: selectedReward === r.label ? r.color : "transparent",
-                  color: selectedReward === r.label ? "white" : r.color,
-                }}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6">
         {celebrating ? (
@@ -194,12 +141,11 @@ export default function TokenBoard() {
             <div className="text-3xl font-black text-amber-700">
               {settings.celebrationEnabled ? "Reward Earned!" : "Well Done ✓"}
             </div>
-            <div
-              className="text-2xl font-black px-6 py-3 rounded-2xl text-white shadow-xl"
-              style={{ backgroundColor: currentReward.color }}
-            >
-              {selectedReward}!
-            </div>
+            {rewardName && (
+              <div className="text-2xl font-black px-6 py-3 rounded-2xl text-white shadow-xl" style={{ backgroundColor: "#D97706" }}>
+                {rewardName}!
+              </div>
+            )}
             <Button onClick={handleReset} size="lg" className="mt-2">
               <RefreshCw size={16} className="mr-2" /> Start Again
             </Button>
@@ -209,20 +155,30 @@ export default function TokenBoard() {
             <div
               className="w-full max-w-xs rounded-3xl p-4 flex items-center gap-3 shadow-lg"
               style={{
-                backgroundColor: currentReward.color + "20",
-                border: `3px solid ${currentReward.color}`,
+                backgroundColor: "#FEF3C722",
+                border: "3px solid #F59E0B",
               }}
               data-testid="reward-display"
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-xl shrink-0"
-                style={{ backgroundColor: currentReward.color }}
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0"
+                style={{ backgroundColor: "#F59E0B" }}
               >
-                ★
+                {rewardName ? (
+                  <span className="text-xl font-black">★</span>
+                ) : (
+                  <ThumbsUp size={22} strokeWidth={2.5} />
+                )}
               </div>
               <div>
                 <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Working for</div>
-                <div className="font-black text-base" style={{ color: currentReward.color }}>{selectedReward}</div>
+                <div
+                  className="font-black text-base"
+                  style={{ color: "#D97706" }}
+                  data-testid="text-reward-label"
+                >
+                  {rewardName ?? "Reward!"}
+                </div>
               </div>
             </div>
 

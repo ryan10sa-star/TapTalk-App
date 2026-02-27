@@ -27,6 +27,7 @@ export interface AppSettings {
   hapticEnabled: boolean;
   maskedWords: string[];
   selectedVoiceSlug: string;
+  rewardLabel: string;
 }
 
 const STORAGE_KEY = "taptalk-settings-v1";
@@ -37,6 +38,7 @@ const DEFAULTS: AppSettings = {
   hapticEnabled: true,
   maskedWords: [],
   selectedVoiceSlug: "sarah",
+  rewardLabel: "",
 };
 
 function loadSettings(): AppSettings {

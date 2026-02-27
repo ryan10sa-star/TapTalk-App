@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ImageOff } from "lucide-react";
 
 interface AACTileProps {
@@ -13,10 +13,28 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
   const [animating, setAnimating] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgRevealed, setImgRevealed] = useState(false);
   const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "");
   const imgSrc = `/aac-images/${fileName}.png`;
+
+  useEffect(() => {
+    const el = buttonRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setImgRevealed(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "120px 0px", threshold: 0.01 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleTap = useCallback(() => {
     if (animTimer.current) clearTimeout(animTimer.current);
@@ -41,6 +59,7 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
 
   return (
     <button
+      ref={buttonRef}
       data-testid={`tile-${fileName}`}
       onClick={handleTap}
       className={`aac-tile group relative flex flex-col items-center justify-between w-full select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-xl${animating ? " tile-spring-tap" : ""}`}
@@ -59,7 +78,12 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
         className="flex-1 w-full flex items-center justify-center rounded-lg overflow-hidden"
         style={{ minHeight: 0 }}
       >
-        {!imgError ? (
+        {!imgRevealed ? (
+          <div
+            className="w-full h-full rounded-lg"
+            style={{ backgroundColor: borderColor, opacity: 0.4 }}
+          />
+        ) : !imgError ? (
           <>
             {!imgLoaded && (
               <div className="w-full h-full flex items-center justify-center opacity-30">
@@ -69,6 +93,7 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
             <img
               src={imgSrc}
               alt={word}
+              loading="lazy"
               className={`w-full h-full object-contain transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0 absolute"}`}
               style={{ maxHeight: "100%" }}
               onLoad={() => setImgLoaded(true)}

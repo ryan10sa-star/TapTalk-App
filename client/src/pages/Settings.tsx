@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play } from "lucide-react";
+import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play, ThumbsUp, Activity } from "lucide-react";
 import { useSettings, hapticTap, VOICE_PROFILES, type VoiceProfile } from "@/lib/settingsContext";
 import { previewVoice } from "@/lib/audio";
 import { Button } from "@/components/ui/button";
@@ -262,12 +262,24 @@ const CATEGORY_COLORS: Record<string, string> = {
   animals: "#65A30D", routines: "#7C3AED", activities: "#0284C7", nature: "#059669",
 };
 
+interface HealthResult {
+  imagesOk: number;
+  imagesTotal: number;
+  audioOk: number;
+  audioTotal: number;
+  missingImages: string[];
+  missingAudio: string[];
+  progress: number;
+}
+
 export default function Settings({ onClose }: SettingsProps) {
   const { settings, update, isWordVisible } = useSettings();
   const [vocabulary, setVocabulary] = useState<VocabWord[]>([]);
   const [vocabSearch, setVocabSearch] = useState("");
   const [testState, setTestState] = useState<"idle" | "running" | "done">("idle");
   const [showConfetti, setShowConfetti] = useState(false);
+  const [healthState, setHealthState] = useState<"idle" | "running" | "done">("idle");
+  const [healthResult, setHealthResult] = useState<HealthResult | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -327,6 +339,70 @@ export default function Settings({ onClose }: SettingsProps) {
     setTimeout(() => setTestState("done"), 3200);
     setTimeout(() => setTestState("idle"), 5500);
   }, [settings]);
+
+  const runHealthCheck = useCallback(async () => {
+    setHealthState("running");
+    setHealthResult(null);
+
+    const vocab = vocabulary.length > 0
+      ? vocabulary
+      : await fetch("/vocabulary.json").then((r) => r.json()).catch(() => []);
+
+    if (!vocab.length) {
+      setHealthState("done");
+      setHealthResult({ imagesOk: 0, imagesTotal: 0, audioOk: 0, audioTotal: 0, missingImages: [], missingAudio: [], progress: 100 });
+      return;
+    }
+
+    const total = vocab.length;
+    let checked = 0;
+    let imagesOk = 0;
+    let audioOk = 0;
+    const missingImages: string[] = [];
+    const missingAudio: string[] = [];
+    const voiceSlug = settings.selectedVoiceSlug;
+
+    const BATCH = 8;
+    for (let i = 0; i < vocab.length; i += BATCH) {
+      const batch = vocab.slice(i, i + BATCH);
+      await Promise.all(batch.map(async (w: VocabWord) => {
+        const fn = w.word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+
+        const imgCheck = fetch(`/aac-images/${fn}.png`, { method: "HEAD" }).then((r) => {
+          if (r.ok) imagesOk++;
+          else missingImages.push(w.word);
+        }).catch(() => missingImages.push(w.word));
+
+        const audioCheck = fetch(`/aac-audio/${voiceSlug}/${fn}.mp3`, { method: "HEAD" }).then(async (r) => {
+          if (r.ok) { audioOk++; return; }
+          const r2 = await fetch(`/aac-audio/${fn}.mp3`, { method: "HEAD" }).catch(() => null);
+          if (r2?.ok) { audioOk++; return; }
+          missingAudio.push(w.word);
+        }).catch(() => missingAudio.push(w.word));
+
+        await Promise.all([imgCheck, audioCheck]);
+        checked++;
+        setHealthResult((prev) => ({
+          imagesOk,
+          imagesTotal: total,
+          audioOk,
+          audioTotal: total,
+          missingImages: missingImages.slice(0, 20),
+          missingAudio: missingAudio.slice(0, 20),
+          progress: Math.round((checked / total) * 100),
+        }));
+      }));
+    }
+
+    setHealthResult({
+      imagesOk, imagesTotal: total,
+      audioOk, audioTotal: total,
+      missingImages: missingImages.slice(0, 20),
+      missingAudio: missingAudio.slice(0, 20),
+      progress: 100,
+    });
+    setHealthState("done");
+  }, [vocabulary, settings.selectedVoiceSlug]);
 
   const hiddenCount = settings.maskedWords.length;
   const totalCount = vocabulary.length;
@@ -417,6 +493,61 @@ export default function Settings({ onClose }: SettingsProps) {
           </div>
         </div>
 
+        <SectionHeader>Token Board Reward</SectionHeader>
+        <div className="px-4 mb-1">
+          <div
+            className="rounded-2xl p-4"
+            style={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#D9770622" }}>
+                <ThumbsUp size={18} style={{ color: "#D97706" }} />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-sm" style={{ color: "#F9FAFB" }}>Custom Reward Name</div>
+                <div className="text-xs mt-0.5 leading-snug" style={{ color: "#6B7280" }}>
+                  What Maya is working toward. Leave blank for a generic reward banner.
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={settings.rewardLabel}
+                onChange={(e) => update({ rewardLabel: e.target.value })}
+                placeholder="e.g. Swing, iPad Time, Snack, Free Play…"
+                maxLength={40}
+                data-testid="input-reward-label"
+                className="w-full px-3 py-2.5 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
+                style={{
+                  backgroundColor: "#111827",
+                  color: "#F9FAFB",
+                  border: "1px solid #374151",
+                  paddingRight: settings.rewardLabel ? "2.5rem" : "0.75rem",
+                }}
+              />
+              {settings.rewardLabel && (
+                <button
+                  onClick={() => update({ rewardLabel: "" })}
+                  data-testid="button-clear-reward"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 focus:outline-none"
+                  aria-label="Clear reward name"
+                >
+                  <X size={14} style={{ color: "#6B7280" }} />
+                </button>
+              )}
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: "#6B7280" }}>
+              <ThumbsUp size={11} />
+              <span>
+                {settings.rewardLabel.trim()
+                  ? `Token Board will show: "${settings.rewardLabel.trim()}"`
+                  : "Token Board will show a generic thumbs-up reward banner"}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <SectionHeader>Diagnostic</SectionHeader>
         <div className="px-4">
           <div className="relative rounded-2xl overflow-hidden" style={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}>
@@ -467,6 +598,125 @@ export default function Settings({ onClose }: SettingsProps) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <SectionHeader>System Health</SectionHeader>
+        <div className="px-4 mb-1">
+          <div
+            className="rounded-2xl p-4"
+            style={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}
+          >
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#10B98133" }}>
+                <Activity size={18} style={{ color: "#34D399" }} />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-sm" style={{ color: "#F9FAFB" }}>Asset Verification</div>
+                <div className="text-xs mt-0.5 leading-snug" style={{ color: "#6B7280" }}>
+                  Checks every PNG image and MP3 audio file against the current vocabulary. Verifies HTTP 200 OK for each.
+                </div>
+              </div>
+            </div>
+
+            {healthState === "idle" && (
+              <button
+                onClick={runHealthCheck}
+                data-testid="button-health-check"
+                className="w-full py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95"
+                style={{ backgroundColor: "#065F46", color: "#34D399", border: "1px solid #064E3B" }}
+              >
+                Run System Health Check
+              </button>
+            )}
+
+            {healthState === "running" && healthResult && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5 text-xs" style={{ color: "#9CA3AF" }}>
+                  <span>Checking assets…</span>
+                  <span>{healthResult.progress}%</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#111827" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{ width: `${healthResult.progress}%`, backgroundColor: "#34D399" }}
+                  />
+                </div>
+                <div className="mt-2 flex gap-4 text-xs" style={{ color: "#6B7280" }}>
+                  <span>🖼 {healthResult.imagesOk}/{healthResult.imagesTotal} images</span>
+                  <span>🔊 {healthResult.audioOk}/{healthResult.audioTotal} audio</span>
+                </div>
+              </div>
+            )}
+
+            {healthState === "done" && healthResult && (
+              <div>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div
+                    className="rounded-xl p-3 text-center"
+                    style={{
+                      backgroundColor: healthResult.imagesOk === healthResult.imagesTotal ? "#064E3B" : "#450A0A",
+                      border: `1px solid ${healthResult.imagesOk === healthResult.imagesTotal ? "#065F46" : "#7F1D1D"}`,
+                    }}
+                  >
+                    <div className="text-lg font-black" style={{ color: healthResult.imagesOk === healthResult.imagesTotal ? "#34D399" : "#FCA5A5" }}>
+                      {healthResult.imagesOk}/{healthResult.imagesTotal}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>Images OK</div>
+                  </div>
+                  <div
+                    className="rounded-xl p-3 text-center"
+                    style={{
+                      backgroundColor: healthResult.audioOk === healthResult.audioTotal ? "#064E3B" : "#451A03",
+                      border: `1px solid ${healthResult.audioOk === healthResult.audioTotal ? "#065F46" : "#7C2D12"}`,
+                    }}
+                  >
+                    <div className="text-lg font-black" style={{ color: healthResult.audioOk === healthResult.audioTotal ? "#34D399" : "#FED7AA" }}>
+                      {healthResult.audioOk}/{healthResult.audioTotal}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>Audio OK</div>
+                  </div>
+                </div>
+
+                {healthResult.missingImages.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs font-bold mb-1" style={{ color: "#FCA5A5" }}>Missing images:</div>
+                    <div className="text-xs leading-relaxed" style={{ color: "#6B7280" }}>
+                      {healthResult.missingImages.join(", ")}
+                      {healthResult.imagesTotal - healthResult.imagesOk > 20 && ` +${healthResult.imagesTotal - healthResult.imagesOk - 20} more`}
+                    </div>
+                  </div>
+                )}
+
+                {healthResult.missingAudio.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs font-bold mb-1" style={{ color: "#FED7AA" }}>Missing audio ({settings.selectedVoiceSlug}):</div>
+                    <div className="text-xs leading-relaxed" style={{ color: "#6B7280" }}>
+                      {healthResult.missingAudio.join(", ")}
+                      {healthResult.audioTotal - healthResult.audioOk > 20 && ` +${healthResult.audioTotal - healthResult.audioOk - 20} more`}
+                    </div>
+                    <div className="text-xs mt-1 font-mono" style={{ color: "#4B5563" }}>
+                      Run: python scripts/generate_audio.py --voice {settings.selectedVoiceSlug}
+                    </div>
+                  </div>
+                )}
+
+                {healthResult.imagesOk === healthResult.imagesTotal && healthResult.audioOk === healthResult.audioTotal && (
+                  <div className="flex items-center gap-2 mb-3 text-sm font-bold" style={{ color: "#34D399" }}>
+                    <CheckCircle2 size={16} /> All assets verified — offline ready
+                  </div>
+                )}
+
+                <button
+                  onClick={() => { setHealthState("idle"); setHealthResult(null); }}
+                  data-testid="button-health-reset"
+                  className="w-full py-2 rounded-xl text-xs font-bold"
+                  style={{ backgroundColor: "#111827", color: "#6B7280" }}
+                >
+                  Run Again
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
