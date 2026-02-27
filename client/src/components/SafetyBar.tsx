@@ -1,17 +1,22 @@
 import { useCallback } from "react";
 import { speakWord } from "@/lib/audio";
 import { logTap } from "@/lib/indexeddb";
+import { useSettings, hapticTap } from "@/lib/settingsContext";
 
 export function SafetyBar() {
+  const { settings } = useSettings();
+
   const handleBreak = useCallback(() => {
+    hapticTap(settings.hapticEnabled, 60);
     speakWord("Break");
     logTap("Break", "safety");
-  }, []);
+  }, [settings.hapticEnabled]);
 
   const handleBathroom = useCallback(() => {
+    hapticTap(settings.hapticEnabled, 60);
     speakWord("Bathroom");
     logTap("Bathroom", "safety");
-  }, []);
+  }, [settings.hapticEnabled]);
 
   return (
     <div

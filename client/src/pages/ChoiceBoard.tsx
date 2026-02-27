@@ -3,6 +3,7 @@ import { speakWord } from "@/lib/audio";
 import { logTap } from "@/lib/indexeddb";
 import { RefreshCw, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSettings, hapticTap } from "@/lib/settingsContext";
 
 type BoardMode = "or" | "first-then" | "blank-then";
 
@@ -159,16 +160,20 @@ function ActivityImage({ word, color }: { word: string; color: string }) {
 }
 
 export default function ChoiceBoard() {
+  const { settings, isWordVisible } = useSettings();
   const [mode, setMode] = useState<BoardMode>("or");
   const [slot1, setSlot1] = useState<Activity | null>(null);
   const [slot2, setSlot2] = useState<Activity | null>(null);
   const [chosen, setChosen] = useState<Activity | null>(null);
 
+  const visibleActivities = ACTIVITY_BANK.filter((a) => isWordVisible(a.word));
+
   const handleChoose = useCallback((act: Activity) => {
+    hapticTap(settings.hapticEnabled, 40);
     speakWord(act.word);
     logTap(act.word, "choice-board");
     setChosen(act);
-  }, []);
+  }, [settings.hapticEnabled]);
 
   const handleReset = useCallback(() => {
     setSlot1(null);
@@ -244,7 +249,7 @@ export default function ChoiceBoard() {
                 label={mode === "or" ? "Choice 1" : "First"}
                 labelColor="#059669"
                 placeholder="Tap to add"
-                activities={ACTIVITY_BANK}
+                activities={visibleActivities}
                 onSelect={setSlot1}
                 onClear={() => setSlot1(null)}
               />
@@ -254,7 +259,7 @@ export default function ChoiceBoard() {
                 label={mode === "or" ? "Choice 2" : "Then"}
                 labelColor={mode === "or" ? "#DC2626" : "#F59E0B"}
                 placeholder="Tap to add"
-                activities={ACTIVITY_BANK}
+                activities={visibleActivities}
                 onSelect={setSlot2}
                 onClear={() => setSlot2(null)}
               />

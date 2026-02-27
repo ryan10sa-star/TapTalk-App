@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { speakWord } from "@/lib/audio";
-import { RefreshCw, Settings } from "lucide-react";
+import { speakWord, playCelebrationSound } from "@/lib/audio";
+import { RefreshCw, Settings, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSettings, hapticTap } from "@/lib/settingsContext";
 
 const TOTAL_TOKENS = 5;
 
@@ -90,6 +91,7 @@ function TokenSlot({ filled, index, onClick }: { filled: boolean; index: number;
 }
 
 export default function TokenBoard() {
+  const { settings } = useSettings();
   const [count, setCount] = useState(() => {
     try { return parseInt(localStorage.getItem("taptalk-tokens") ?? "0", 10); } catch { return 0; }
   });
@@ -114,6 +116,7 @@ export default function TokenBoard() {
     if (count === TOTAL_TOKENS) return;
     if (index !== count) return;
 
+    hapticTap(settings.hapticEnabled, 35);
     const newCount = count + 1;
     setCount(newCount);
     speakWord("Token");
@@ -122,10 +125,12 @@ export default function TokenBoard() {
       setTimeout(() => {
         setCelebrating(true);
         speakWord(`Reward earned! Time for ${selectedReward}!`);
+        playCelebrationSound();
+        hapticTap(settings.hapticEnabled, [100, 50, 100, 50, 300]);
         setTimeout(() => setCelebrating(false), 4000);
       }, 300);
     }
-  }, [count, celebrating, selectedReward]);
+  }, [count, celebrating, selectedReward, settings.hapticEnabled]);
 
   const handleReset = useCallback(() => {
     setCount(0);
@@ -135,7 +140,7 @@ export default function TokenBoard() {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-yellow-50 to-amber-50" data-testid="token-board-page">
-      {celebrating && <Confetti />}
+      {celebrating && settings.celebrationEnabled && <Confetti />}
 
       <div className="shrink-0 px-4 pt-3 pb-2 bg-white border-b flex items-center justify-between" style={{ borderColor: "#FDE68A" }}>
         <div>
@@ -178,9 +183,15 @@ export default function TokenBoard() {
 
       <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6">
         {celebrating ? (
-          <div className="flex flex-col items-center gap-4 text-center animate-bounce">
-            <div className="text-6xl">🌟</div>
-            <div className="text-3xl font-black text-amber-700">Reward Earned!</div>
+          <div className="flex flex-col items-center gap-4 text-center" style={{ animation: settings.celebrationEnabled ? "bounce 1s infinite" : "none" }}>
+            {settings.celebrationEnabled ? (
+              <div className="text-6xl">🌟</div>
+            ) : (
+              <CheckCircle2 size={64} className="text-green-500" />
+            )}
+            <div className="text-3xl font-black text-amber-700">
+              {settings.celebrationEnabled ? "Reward Earned!" : "Well Done ✓"}
+            </div>
             <div
               className="text-2xl font-black px-6 py-3 rounded-2xl text-white shadow-xl"
               style={{ backgroundColor: currentReward.color }}

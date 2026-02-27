@@ -7,6 +7,7 @@ import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { speakWord, preloadAudio } from "@/lib/audio";
 import { logTap } from "@/lib/indexeddb";
 import { usePartner } from "@/lib/partnerContext";
+import { useSettings, hapticTap } from "@/lib/settingsContext";
 import { BarChart2, Search, X, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +27,7 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const { locked, setLocked } = usePartner();
+  const { settings, isWordVisible } = useSettings();
 
   useEffect(() => {
     fetch("/vocabulary.json")
@@ -56,20 +58,21 @@ export default function Home() {
   );
 
   const displayedWords = useMemo(() => {
-    let words = vocabulary;
+    let words = vocabulary.filter((w) => isWordVisible(w.word));
     if (selectedCategory !== "all") words = words.filter((w) => w.category === selectedCategory);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       words = words.filter((w) => w.word.toLowerCase().includes(q));
     }
     return words;
-  }, [vocabulary, selectedCategory, searchQuery]);
+  }, [vocabulary, selectedCategory, searchQuery, isWordVisible, settings.maskedWords]);
 
   const handleTap = useCallback((word: string, category: string) => {
+    hapticTap(settings.hapticEnabled, 35);
     speakWord(word);
     logTap(word, category);
     setSentenceWords((prev) => [...prev, word]);
-  }, []);
+  }, [settings.hapticEnabled]);
 
   const handleSpeakSentence = useCallback(() => {
     if (sentenceWords.length === 0) return;
