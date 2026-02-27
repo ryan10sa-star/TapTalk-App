@@ -19,9 +19,11 @@ Open this URL in your browser right now (no account, no publishing needed):
 
 ### 🚀 Permanent GitHub Pages URL (one-time setup)
 
-1. Go to **GitHub → Settings → Pages → Build and deployment → Source → "GitHub Actions"**
-2. The deploy workflow already exists (`.github/workflows/deploy.yml`) and will run automatically
-3. Your permanent URL: **https://ryan10sa-star.github.io/TapTalk-App/**
+1. Go to **GitHub → Settings → Pages → Build and deployment**
+2. Set **Source** → **Deploy from a branch**
+3. Set **Branch** → **`gh-pages`** and folder **`/ (root)`**, then click **Save**
+4. The deploy workflow already exists (`.github/workflows/deploy.yml`) and will push to the `gh-pages` branch automatically on every push
+5. Your permanent URL: **https://ryan10sa-star.github.io/TapTalk-App/**
 
 ---
 
