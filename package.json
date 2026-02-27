@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "fetch-images": "node fetch-aac-images.js",
-    "prebuild": "node fetch-aac-images.js",
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview"
