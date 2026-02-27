@@ -1,4 +1,4 @@
-# TapTalk AAC — Lake County Edition (v2.0)
+# TapTalk AAC — Lake County Edition (v3.0)
 
 A premium Augmentative and Alternative Communication (AAC) Progressive Web App built for Maya.
 
@@ -11,9 +11,16 @@ A premium Augmentative and Alternative Communication (AAC) Progressive Web App b
 - **Audio**: Web Speech API (TTS fallback) + MP3 file loading from `/aac-audio/`
 - **PWA**: Service Worker (`/sw.js`) with Stale-While-Revalidate for media assets
 
+## Pages / Views (Bottom Navigation)
+
+- **AAC Board** (`/`) — Main communication board
+- **Choice Board** (`/choice-board`) — OR / First-Then / Blank-Then modes
+- **Token Board** (`/token-board`) — 5-slot reward economy with celebration
+- **Visual Schedule** (`/schedule`) — 8-slot school day + visual countdown timer
+
 ## Key Files
 
-- `client/public/vocabulary.json` — 255+ words across 15 categories
+- `client/public/vocabulary.json` — 278+ words across 16 categories (incl. School)
 - `client/src/pages/Home.tsx` — Main AAC board page
 - `client/src/components/AACTile.tsx` — Tap-responsive word tile
 - `client/src/components/SentenceStrip.tsx` — Sentence builder strip

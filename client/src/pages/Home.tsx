@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { AACTile } from "@/components/AACTile";
 import { SentenceStrip } from "@/components/SentenceStrip";
-import { CategoryNav, CATEGORIES } from "@/components/CategoryNav";
+import { CategoryNav } from "@/components/CategoryNav";
 import { PartnerModeLock } from "@/components/PartnerModeLock";
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { speakWord, preloadAudio } from "@/lib/audio";
 import { logTap } from "@/lib/indexeddb";
+import { usePartner } from "@/lib/partnerContext";
 import { BarChart2, Search, X, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -20,19 +21,18 @@ export default function Home() {
   const [vocabulary, setVocabulary] = useState<VocabWord[]>([]);
   const [sentenceWords, setSentenceWords] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [locked, setLocked] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const { locked, setLocked } = usePartner();
 
   useEffect(() => {
     fetch("/vocabulary.json")
       .then((r) => r.json())
       .then((data: VocabWord[]) => {
         setVocabulary(data);
-        const firstBatch = data.slice(0, 40).map((w) => w.word);
-        preloadAudio(firstBatch);
+        preloadAudio(data.slice(0, 40).map((w) => w.word));
       })
       .catch(console.error);
   }, []);
@@ -44,30 +44,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!locked) {
-      const words = displayedWords.map((w) => w.word);
-      preloadAudio(words);
-    }
-  }, [selectedCategory, locked]);
-
-  useEffect(() => {
-    if (showSearch && searchRef.current) {
-      searchRef.current.focus();
-    }
+    if (showSearch && searchRef.current) searchRef.current.focus();
   }, [showSearch]);
 
-  const wordCounts = useMemo(() => {
-    return vocabulary.reduce<Record<string, number>>((acc, w) => {
+  const wordCounts = useMemo(() =>
+    vocabulary.reduce<Record<string, number>>((acc, w) => {
       acc[w.category] = (acc[w.category] ?? 0) + 1;
       return acc;
-    }, {});
-  }, [vocabulary]);
+    }, {}),
+    [vocabulary]
+  );
 
   const displayedWords = useMemo(() => {
     let words = vocabulary;
-    if (selectedCategory !== "all") {
-      words = words.filter((w) => w.category === selectedCategory);
-    }
+    if (selectedCategory !== "all") words = words.filter((w) => w.category === selectedCategory);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       words = words.filter((w) => w.word.toLowerCase().includes(q));
@@ -75,28 +65,16 @@ export default function Home() {
     return words;
   }, [vocabulary, selectedCategory, searchQuery]);
 
-  const handleTap = useCallback(
-    (word: string, category: string) => {
-      speakWord(word);
-      logTap(word, category);
-      setSentenceWords((prev) => [...prev, word]);
-    },
-    []
-  );
+  const handleTap = useCallback((word: string, category: string) => {
+    speakWord(word);
+    logTap(word, category);
+    setSentenceWords((prev) => [...prev, word]);
+  }, []);
 
   const handleSpeakSentence = useCallback(() => {
     if (sentenceWords.length === 0) return;
-    const sentence = sentenceWords.join(" ");
-    speakWord(sentence);
+    speakWord(sentenceWords.join(" "));
   }, [sentenceWords]);
-
-  const handleRemoveWord = useCallback((index: number) => {
-    setSentenceWords((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleClearSentence = useCallback(() => {
-    setSentenceWords([]);
-  }, []);
 
   const handleCategorySelect = useCallback((id: string) => {
     if (locked) return;
@@ -104,12 +82,6 @@ export default function Home() {
     setSearchQuery("");
     setShowSearch(false);
   }, [locked]);
-
-  const toggleLock = useCallback(() => {
-    setLocked((prev) => !prev);
-  }, []);
-
-  const currentCategory = CATEGORIES.find((c) => c.id === selectedCategory);
 
   const gridCols = useMemo(() => {
     const count = displayedWords.length;
@@ -119,19 +91,10 @@ export default function Home() {
   }, [displayedWords.length]);
 
   return (
-    <div
-      className="flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-950"
-      data-testid="home-page"
-    >
-      <header
-        className="shrink-0 flex items-center gap-2 px-3 py-2.5 border-b bg-white dark:bg-slate-900"
-        style={{ borderColor: "#E2E8F0" }}
-      >
+    <div className="flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950" data-testid="home-page">
+      <header className="shrink-0 flex items-center gap-2 px-3 py-2.5 border-b bg-white dark:bg-slate-900" style={{ borderColor: "#E2E8F0" }}>
         <div className="flex items-center gap-2 mr-auto">
-          <div
-            className="flex items-center justify-center w-8 h-8 rounded-lg font-black text-white text-sm"
-            style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)" }}
-          >
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg font-black text-white text-sm" style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)" }}>
             TT
           </div>
           <div className="hidden sm:block">
@@ -156,67 +119,41 @@ export default function Home() {
                   style={{ borderColor: "#CBD5E1" }}
                 />
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => { setShowSearch(false); setSearchQuery(""); }}
-                data-testid="button-close-search"
-              >
+              <Button size="icon" variant="ghost" onClick={() => { setShowSearch(false); setSearchQuery(""); }} data-testid="button-close-search">
                 <X size={16} />
               </Button>
             </div>
           ) : (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setShowSearch(true)}
-              data-testid="button-open-search"
-              aria-label="Search words"
-            >
+            <Button size="icon" variant="ghost" onClick={() => setShowSearch(true)} data-testid="button-open-search" aria-label="Search words">
               <Search size={16} />
             </Button>
           )}
-
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setShowAnalytics(true)}
-            data-testid="button-analytics"
-            aria-label="View analytics"
-          >
+          <Button size="icon" variant="ghost" onClick={() => setShowAnalytics(true)} data-testid="button-analytics" aria-label="View analytics">
             <BarChart2 size={16} />
           </Button>
         </div>
 
-        <PartnerModeLock locked={locked} onToggle={toggleLock} />
+        <PartnerModeLock locked={locked} onToggle={() => setLocked(!locked)} />
       </header>
 
       {locked && (
-        <div
-          className="shrink-0 flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white"
-          style={{ backgroundColor: "#EF4444" }}
-          data-testid="partner-mode-banner"
-        >
+        <div className="shrink-0 flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white" style={{ backgroundColor: "#EF4444" }} data-testid="partner-mode-banner">
           <Volume2 size={15} />
-          Partner Mode Active — Hold lock button for 3 seconds to unlock
+          Partner Mode Active — Hold lock button 3 seconds to unlock
         </div>
       )}
 
       <div className="shrink-0 px-3 pt-2.5">
         <SentenceStrip
           words={sentenceWords}
-          onRemoveWord={handleRemoveWord}
-          onClear={handleClearSentence}
+          onRemoveWord={(i) => setSentenceWords((prev) => prev.filter((_, idx) => idx !== i))}
+          onClear={() => setSentenceWords([])}
           onSpeak={handleSpeakSentence}
         />
       </div>
 
       <div className={`shrink-0 px-3 pt-2 ${locked ? "opacity-40 pointer-events-none select-none" : ""}`}>
-        <CategoryNav
-          selected={selectedCategory}
-          onSelect={handleCategorySelect}
-          wordCounts={wordCounts}
-        />
+        <CategoryNav selected={selectedCategory} onSelect={handleCategorySelect} wordCounts={wordCounts} />
       </div>
 
       {searchQuery && (
@@ -227,11 +164,7 @@ export default function Home() {
         </div>
       )}
 
-      <main
-        className="flex-1 overflow-y-auto px-3 pb-3 pt-2"
-        data-testid="tile-grid"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
+      <main className="flex-1 overflow-y-auto px-3 pb-2 pt-2" data-testid="tile-grid" style={{ WebkitOverflowScrolling: "touch" }}>
         {vocabulary.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -244,43 +177,24 @@ export default function Home() {
             <div className="text-center py-12">
               <Search size={40} className="mx-auto mb-3 opacity-20" />
               <p className="text-muted-foreground font-medium">No words found</p>
-              <p className="text-sm text-muted-foreground mt-1">Try a different search term</p>
             </div>
           </div>
         ) : (
-          <div
-            className={`grid gap-2 sm:gap-2.5 ${gridCols}`}
-            style={{ alignContent: "start" }}
-          >
+          <div className={`grid gap-2 sm:gap-2.5 ${gridCols}`} style={{ alignContent: "start" }}>
             {displayedWords.map((vocab) => (
-              <AACTile
-                key={vocab.id}
-                word={vocab.word}
-                category={vocab.category}
-                color={vocab.color}
-                onTap={handleTap}
-              />
+              <AACTile key={vocab.id} word={vocab.word} category={vocab.category} color={vocab.color} onTap={handleTap} />
             ))}
           </div>
         )}
       </main>
 
-      <footer className="shrink-0 px-3 py-1.5 border-t flex items-center justify-center" style={{ borderColor: "#E2E8F0" }}>
-        <a
-          href="https://arasaac.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-muted-foreground"
-          data-testid="link-attribution"
-          tabIndex={-1}
-        >
-          Pictograms by ARASAAC © Gobierno de Aragón, Spain · CC BY-NC-SA 4.0 · arasaac.org
+      <div className="shrink-0 px-3 py-1 border-t flex items-center justify-center" style={{ borderColor: "#E2E8F0" }}>
+        <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground" data-testid="link-attribution" tabIndex={-1}>
+          Pictograms by ARASAAC © Gobierno de Aragón, Spain · CC BY-NC-SA 4.0
         </a>
-      </footer>
+      </div>
 
-      {showAnalytics && (
-        <AnalyticsPanel onClose={() => setShowAnalytics(false)} />
-      )}
+      {showAnalytics && <AnalyticsPanel onClose={() => setShowAnalytics(false)} />}
     </div>
   );
 }

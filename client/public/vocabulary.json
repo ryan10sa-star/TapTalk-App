@@ -267,5 +267,31 @@
   { "id": 252, "word": "Moon", "category": "nature", "color": "#059669" },
   { "id": 253, "word": "Stars", "category": "nature", "color": "#059669" },
   { "id": 254, "word": "Grass", "category": "nature", "color": "#059669" },
-  { "id": 255, "word": "Rock", "category": "nature", "color": "#059669" }
+  { "id": 255, "word": "Rock", "category": "nature", "color": "#059669" },
+
+  { "id": 256, "word": "Kinetic Sand", "category": "activities", "color": "#0284C7" },
+  { "id": 257, "word": "Blocks", "category": "activities", "color": "#0284C7" },
+  { "id": 258, "word": "Trains", "category": "activities", "color": "#0284C7" },
+  { "id": 259, "word": "Dolls", "category": "activities", "color": "#0284C7" },
+  { "id": 260, "word": "Playdough", "category": "activities", "color": "#0284C7" },
+  { "id": 261, "word": "Bubbles", "category": "activities", "color": "#0284C7" },
+  { "id": 262, "word": "Trucks", "category": "activities", "color": "#0284C7" },
+  { "id": 263, "word": "Sand", "category": "things", "color": "#CA8A04" },
+
+  { "id": 264, "word": "OT", "category": "school", "color": "#6D28D9" },
+  { "id": 265, "word": "PT", "category": "school", "color": "#6D28D9" },
+  { "id": 266, "word": "Speech", "category": "school", "color": "#6D28D9" },
+  { "id": 267, "word": "Reading", "category": "school", "color": "#6D28D9" },
+  { "id": 268, "word": "Centers", "category": "school", "color": "#6D28D9" },
+  { "id": 269, "word": "Math", "category": "school", "color": "#6D28D9" },
+  { "id": 270, "word": "Recess", "category": "school", "color": "#6D28D9" },
+  { "id": 271, "word": "Circle Time", "category": "school", "color": "#6D28D9" },
+  { "id": 272, "word": "Art", "category": "school", "color": "#6D28D9" },
+  { "id": 273, "word": "Music Class", "category": "school", "color": "#6D28D9" },
+  { "id": 274, "word": "Gym", "category": "school", "color": "#6D28D9" },
+  { "id": 275, "word": "Library Time", "category": "school", "color": "#6D28D9" },
+
+  { "id": 276, "word": "Break", "category": "core", "color": "#2563EB" },
+  { "id": 277, "word": "Token", "category": "core", "color": "#2563EB" },
+  { "id": 278, "word": "Reward", "category": "core", "color": "#2563EB" }
 ]

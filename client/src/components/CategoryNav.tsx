@@ -15,6 +15,7 @@ export const CATEGORIES: Category[] = [
   { id: "feelings", label: "Feelings", color: "#7C3AED", icon: "♥" },
   { id: "food", label: "Food", color: "#059669", icon: "◉" },
   { id: "lake-county", label: "Lake County", color: "#92400E", icon: "◈" },
+  { id: "school", label: "School", color: "#6D28D9", icon: "✏" },
   { id: "people", label: "People", color: "#DB2777", icon: "◎" },
   { id: "places", label: "Places", color: "#0891B2", icon: "◆" },
   { id: "things", label: "Things", color: "#CA8A04", icon: "◇" },
