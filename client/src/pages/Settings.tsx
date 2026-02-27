@@ -100,8 +100,8 @@ function VoiceCard({
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
     setPreviewing(true);
-    previewVoice(voice.slug, "Hello");
-    setTimeout(() => setPreviewing(false), 1500);
+    previewVoice(voice.slug, "Hello", voice.id);
+    setTimeout(() => setPreviewing(false), 2500);
   };
 
   return (

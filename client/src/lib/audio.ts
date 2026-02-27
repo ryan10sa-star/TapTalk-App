@@ -147,13 +147,32 @@ export function playSfx(name: SfxName, options?: { highEnergy?: boolean }): void
   audio.play().catch(() => {});
 }
 
-export function previewVoice(voiceSlug: string, word = "Hello"): void {
+export function previewVoice(voiceSlug: string, word = "Hello", voiceId?: string): void {
   const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
-  const path = `/aac-audio/${voiceSlug}/${fileName}.mp3`;
-  const audio = new Audio(path);
-  audio.onerror = () => fallbackSpeak(word);
-  fadeIn(audio, 1.0, 5);
-  audio.play().catch(() => fallbackSpeak(word));
+  const staticPath = `/aac-audio/${voiceSlug}/${fileName}.mp3`;
+
+  const playViaApi = () => {
+    if (!voiceId) { fallbackSpeak(word); return; }
+    const url = `/api/tts-preview?voiceId=${encodeURIComponent(voiceId)}&text=${encodeURIComponent(word)}`;
+    const audio = new Audio(url);
+    audio.onerror = () => fallbackSpeak(word);
+    fadeIn(audio, 1.0, 5);
+    audio.play().catch(() => fallbackSpeak(word));
+  };
+
+  // Try the pre-baked file first (zero API cost); fall back to live API call.
+  const audio = new Audio(staticPath);
+  audio.onerror = () => playViaApi();
+  audio.oncanplaythrough = () => {
+    audio.onerror = null;
+    fadeIn(audio, 1.0, 5);
+    audio.play().catch(() => playViaApi());
+  };
+  // If the static file never responds, kick off the API after 1.5s.
+  const timeout = setTimeout(playViaApi, 1500);
+  audio.addEventListener("canplaythrough", () => clearTimeout(timeout), { once: true });
+  audio.addEventListener("error", () => clearTimeout(timeout), { once: true });
+  audio.load();
 }
 
 export function playCelebrationSound(): void {
