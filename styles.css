@@ -1,0 +1,893 @@
+@media (max-width: 599px) {
+  #choice-bank {
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+}
+/*
+   Tablet-First approach: landscape orientation first
+   Media queries aligned with index.html breakpoints
+*/
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet landscape */
+  #choice-bank {
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Tablet portrait and larger */
+  #choice-bank {
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+  }
+}
+
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #F5F5F5;
+  font-family: Arial, Helvetica, system-ui, sans-serif;
+  color: #333;
+  /* Prevent any text selection — motor planning disruption risk */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- App shell ---------- */
+#app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------- Navigation ---------- */
+#main-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 60px;
+  min-height: 60px;
+  padding: 0 10px;
+  background: #E0E0E0;
+  border-bottom: 3px solid #ccc;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  flex: 1;
+  height: 44px;
+  border: 2px solid #ccc;
+  background: transparent;
+  color: #666;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  /* Fixed size: never move / resize after render */
+  transition: none;
+}
+
+.nav-btn.active {
+  background: #333;
+  color: #fff;
+  border-color: #333;
+}
+
+.dev-toggle-btn {
+  padding: 6px 14px;
+  height: 44px;
+  background: #333;
+  color: #fff;
+  border: 2px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---------- Views ---------- */
+.view {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+.view.active {
+  display: flex;
+}
+
+/* ============================================================
+   View 1 — Core Vocabulary (Yes / No)
+   ============================================================ */
+#view-core-vocab {
+  flex-direction: row;
+}
+
+.vocab-btn {
+  flex: 1;
+  /* Fixed layout — never resize/reflow once rendered */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 4px solid #333;
+  border-radius: 12px;
+  cursor: pointer;
+  /* Instant feedback ≤50ms */
+  transition: transform 40ms, background-color 40ms;
+}
+
+.yes-btn {
+  background: #2d6a2d;
+  border-right: 4px solid #333;
+}
+
+.yes-btn:active {
+  background: #1e4d1e;
+  transform: scale(0.98);
+}
+
+.no-btn {
+  background: #8b2020;
+  border-left: 4px solid #333;
+}
+
+.no-btn:active {
+  background: #5c1515;
+  transform: scale(0.98);
+}
+
+.vocab-btn .pictogram {
+  /* Fixed pixel size — no dynamic resize */
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.vocab-btn .btn-label {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   View 2 — Choice Board
+   ============================================================ */
+#view-choice-board {
+  flex-direction: column;
+}
+
+/* -- Display area (top strip) -- */
+#choice-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 16px;
+  height: 180px;
+  min-height: 180px;
+  background: #E0E0E0;
+  border-bottom: 3px solid #ccc;
+  flex-shrink: 0;
+}
+
+.choice-slot {
+  /* Fixed size — motor planning stability */
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  border: 4px solid #333;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.choice-slot.empty {
+  border-style: dashed;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.choice-slot img {
+  /* Match bank-item image size for visual uniformity across both views */
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.choice-slot .slot-label {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: #333;
+  margin-top: 4px;
+  line-height: 1.1;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.slot-placeholder {
+  font-size: 3.5rem;
+  color: #999;
+  opacity: 0.4;
+  line-height: 1;
+}
+
+#or-divider {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #666;
+  flex-shrink: 0;
+  letter-spacing: 0.1em;
+}
+
+.clear-btn {
+  padding: 10px 22px;
+  height: 44px;
+  background: #E0E0E0;
+  color: #333;
+  border: 2px solid #333;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: none;
+}
+
+.clear-btn:active {
+  background: #ccc;
+}
+
+/* -- Bank area (bottom grid) -- */
+#choice-bank {
+  flex: 1;
+  display: grid;
+  /* Always fill available width with consistent columns */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.bank-item {
+  /* Fixed height — no layout shift */
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 4px solid #333;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 8px;
+  gap: 6px;
+  /* Instant feedback ≤50ms */
+  transition: transform 40ms, background-color 40ms;
+}
+
+.bank-item:active {
+  background: #E0E0E0;
+  border-color: #333;
+  transform: scale(0.98);
+}
+
+.bank-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.bank-item .item-label {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: #333;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Pictogram loading fade */
+.pict-loading {
+  opacity: 0.25;
+}
+
+/* Shared dev log entry style (used by View 3) */
+.dev-log-entry {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #0e0e20;
+  color: #80d080;
+  word-break: break-all;
+  line-height: 1.4;
+  font-size: 0.78rem;
+}
+
+.dev-log-entry .log-time {
+  color: #5050a0;
+  margin-right: 6px;
+}
+
+.dev-log-entry .log-type {
+  color: #90c0ff;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* ============================================================
+   View 3 — Dev Preview
+   Full-screen developer dashboard: dark terminal aesthetic
+   ============================================================ */
+#view-dev-preview {
+  flex-direction: column;
+  background: #0a0a18;
+  color: #c0d8ff;
+  font-family: monospace;
+  overflow: hidden;
+}
+
+/* -- Status bar -- */
+#dev-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  height: 48px;
+  min-height: 48px;
+  background: #111128;
+  border-bottom: 2px solid #1e2a4a;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.dev-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px 0 0;
+  white-space: nowrap;
+  border-right: 1px solid #1e2a4a;
+  margin-right: 18px;
+  font-size: 0.8rem;
+}
+
+.dev-status-item:last-child {
+  border-right: none;
+  margin-right: 0;
+}
+
+.dev-status-label {
+  color: #5a6a8a;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.dev-status-value {
+  font-weight: 600;
+}
+
+.dev-status-pending { color: #8080a0; }
+.dev-status-ok      { color: #50d090; }
+.dev-status-err     { color: #e05050; }
+
+/* -- Event log -- */
+#dev-preview-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+}
+
+#dev-preview-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Reuse .dev-log-entry styles already defined above */
+
+/* -- Action footer -- */
+#dev-preview-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: #111128;
+  border-top: 2px solid #1e2a4a;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-family: monospace;
+}
+
+#dev-preview-count {
+  flex: 1;
+  color: #5a6a8a;
+  font-size: 0.78rem;
+}
+
+#dev-preview-clear,
+#dev-preview-refresh,
+#dev-preview-export {
+  background: #1e1e3a;
+  border: 1px solid #4a4a8a;
+  color: #8080d0;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: none;
+}
+
+#dev-preview-export {
+  background: #0d2a1e;
+  border-color: #2a7a5a;
+  color: #50d090;
+}
+
+#dev-preview-clear:active,
+#dev-preview-refresh:active { background: #2a2a4a; }
+#dev-preview-export:active  { background: #1a4a36; }
+
+/* ============================================================
+   Orientation warning overlay
+   ============================================================ */
+#orientation-warning {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #F5F5F5;
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  padding: 24px;
+}
+
+#orientation-warning.visible {
+  display: flex;
+}
+
+.orient-icon {
+  font-size: 5rem;
+  animation: orientRotate 2s ease-in-out infinite;
+}
+
+@keyframes orientRotate {
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(90deg); }
+}
+
+#orientation-warning h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+#orientation-warning p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* ============================================================
+   Partner Mode — visual indicator
+   ============================================================ */
+
+/* Blue ring inset on the entire app shell — zero layout impact */
+#app.partner-mode {
+  outline: 8px solid #2196F3;
+  outline-offset: -8px;
+}
+
+/* Partner mode toggle button in the nav */
+#partner-mode-toggle {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  transition: none;
+  padding: 0;
+}
+
+#partner-mode-toggle[aria-pressed="true"] {
+  background: #2196F3;
+  border-color: #1565c0;
+  color: #fff;
+}
+
+/* ============================================================
+   Turn Taking footer — persistent across all views
+   ============================================================ */
+#turn-footer {
+  display: flex;
+  height: 80px;
+  min-height: 80px;
+  flex-shrink: 0;
+  border-top: 3px solid #ccc;
+  background: #eeeeee;
+}
+
+.turn-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 900;
+  font-family: inherit;
+  /* Instant feedback */
+  transition: background-color 40ms;
+}
+
+.turn-btn:first-child {
+  background: #e3f2fd;
+  border-right: 2px solid #ccc;
+}
+
+.turn-btn:last-child {
+  background: #f3e5f5;
+}
+
+.turn-btn:active {
+  filter: brightness(0.88);
+}
+
+.turn-pict {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.turn-label {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #333;
+}
+
+/* ============================================================
+   Settings Button — subtle gear; 3-second long-press to open
+   ============================================================ */
+#settings-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  /* Low opacity makes it inconspicuous to casual users */
+  opacity: 0.2;
+  color: #333;
+  padding: 0;
+  /* Override global touch-action so pointerdown fires instantly */
+  touch-action: none;
+}
+
+#settings-btn:active {
+  opacity: 0.5;
+}
+
+/* ============================================================
+   Settings Modal
+   ============================================================ */
+#settings-modal {
+    overflow-y: auto;
+    max-height: 80vh;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+#settings-modal.open {
+  display: flex;
+}
+
+.settings-panel {
+  background: #fff;
+  border-radius: 16px;
+  width: min(92vw, 680px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* -- Header -- */
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 2px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.settings-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #333;
+}
+
+.settings-close-btn {
+  width: 36px;
+  height: 36px;
+  background: #eee;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-close-btn:active {
+  background: #ddd;
+}
+
+/* -- Section wrapper -- */
+.settings-section {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.settings-vocab-section {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.settings-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* -- Voice selector -- */
+.settings-voice-select {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fafafa;
+  color: #333;
+  cursor: pointer;
+  /* Allow native selection UI */
+  user-select: text;
+  -webkit-user-select: text;
+  touch-action: manipulation;
+}
+
+/* -- Vocabulary search + grid -- */
+.settings-vocab-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.settings-vocab-header .settings-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.settings-search {
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fafafa;
+  color: #333;
+  user-select: text;
+  -webkit-user-select: text;
+  touch-action: manipulation;
+  outline: none;
+}
+
+.settings-word-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  overflow-y: auto;
+  padding: 4px 2px 8px;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+.settings-word-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 8px 6px 6px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #f9f9f9;
+  min-height: 90px;
+  position: relative;
+}
+
+.settings-word-item.active {
+  border-color: #2196F3;
+  background: #e3f2fd;
+}
+
+.settings-word-item:active {
+  background: #e0e0e0;
+}
+
+.settings-word-item.active:active {
+  background: #bbdefb;
+}
+
+.settings-word-check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2196F3;
+}
+
+.settings-word-img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.settings-word-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  color: #333;
+  line-height: 1.2;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* -- Footer -- */
+.settings-footer {
+  padding: 14px 20px;
+  border-top: 2px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.settings-save-btn {
+  padding: 10px 28px;
+  background: #2196F3;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-save-btn:active {
+  background: #1565c0;
+}
+
+/* ============================================================
+   Anderson-OS Sync section (inside Settings modal)
+   ============================================================ */
+.aos-summary {
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.aos-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aos-export-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: #2196F3;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.aos-export-btn:active {
+  background: #1565c0;
+}
+
+.aos-clear-btn {
+  padding: 10px 16px;
+  background: #fff;
+  color: #c62828;
+  border: 2px solid #c62828;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.aos-clear-btn:active {
+  background: #ffebee;
+}
