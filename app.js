@@ -120,24 +120,45 @@ const Speech = (() => {
 
 /* ============================================================
    PICTOGRAM MODULE
-   Resolves pictograms from locally-downloaded files.
+   Resolves pictograms from locally-downloaded files first, then
+   falls back to the live ARASAAC API when the local file is absent
+   (e.g. raw-file preview, GitHub Pages without a build step).
    Run `npm run fetch-images` before serving to populate
    public/aac-images/{word}.png for all core vocabulary.
    ============================================================ */
 const Pictogram = (() => {
+  const _SEARCH = 'https://api.arasaac.org/api/pictograms/en/search/';
+  const _CDN    = 'https://static.arasaac.org/pictograms/';
+
   /** Absolute-root path for a pre-downloaded pictogram */
   function _localPath(word) {
     return `./aac-images/${word.toLowerCase()}.png`;
   }
 
+  /** Fetch the pictogram from ARASAAC and set it on imgEl */
+  function _loadFromApi(imgEl, word) {
+    fetch(`${_SEARCH}${encodeURIComponent(word.toLowerCase())}`)
+      .then((r) => r.json())
+      .then((results) => {
+        if (Array.isArray(results) && results.length > 0) {
+          const id = results[0]._id;
+          imgEl.src = `${_CDN}${id}/${id}_500.png`;
+        }
+      })
+      .catch(() => {}); // leave blank if network unavailable
+  }
+
   /**
-   * Load a pictogram into an <img> element from the local file.
-   * If the file is absent (images not yet downloaded), the element
-   * stays hidden and the text label remains visible — no broken icon.
+   * Load a pictogram into an <img> element.
+   * Tries the pre-downloaded local file first; falls back to the live
+   * ARASAAC API if the file is absent — no broken icon in either case.
    */
   function load(imgEl, word) {
     imgEl.src = _localPath(word);
-    imgEl.onerror = () => imgEl.removeAttribute('src');
+    imgEl.onerror = () => {
+      imgEl.onerror = null; // prevent re-firing
+      _loadFromApi(imgEl, word);
+    };
   }
 
   /** Return the local path for a word (used when filling choice slots) */
@@ -296,13 +317,10 @@ const ChoiceBoard = (() => {
     slotEl.classList.remove('empty');
     slotEl.innerHTML = '';
 
-    const url = Pictogram.getCachedUrl(word);
-    if (url) {
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = word;
-      slotEl.appendChild(img);
-    }
+    const img = document.createElement('img');
+    img.alt = word;
+    slotEl.appendChild(img);
+    Pictogram.load(img, word.toLowerCase());
 
     const lbl = document.createElement('span');
     lbl.className = 'slot-label';
