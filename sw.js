@@ -3,7 +3,7 @@
    Cache-first Service Worker.  Works perfectly in airplane mode.
    ============================================================ */
 
-const CACHE_NAME = 'taptalk-v2';
+const CACHE_NAME = 'taptalk-v6';
 
 /** Static app-shell assets — must all be present; cached atomically on install */
 const isGitHub = self.location.hostname && self.location.hostname.includes('github.io');
