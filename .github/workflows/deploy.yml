@@ -1,0 +1,40 @@
+# Deploy TapTalk AAC to GitHub Pages
+#
+# This workflow runs automatically after every push to main.
+# It publishes the app to the gh-pages branch, which GitHub Pages
+# can serve from Settings → Pages → Deploy from a branch → gh-pages / (root).
+#
+# The app is ALSO live immediately from main / (root) — no workflow needed
+# for that. This workflow just keeps gh-pages in sync as a bonus.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Deploy straight from the repo root — no build step needed.
+          publish_dir: .
+          # Exclude CI config and dev tooling — not part of the web app.
+          exclude_assets: '.github,node_modules,dist,fetch-aac-images.js,package.json,package-lock.json'

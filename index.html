@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    maximum-scale=1 + user-scalable=no: prevent pinch-zoom.
+    touch-action:manipulation in CSS prevents double-tap zoom.
+  -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,
+                 maximum-scale=1.0, user-scalable=no" />
+
+  <meta name="theme-color" content="#F5F5F5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description"
+        content="Offline-first Augmentative and Alternative Communication app" />
+
+  <title>TapTalk AAC</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ========================================================
+     Landscape orientation warning
+     Shown only when device is in portrait mode
+     ======================================================== -->
+<div id="orientation-warning" role="alert" aria-live="assertive">
+  <div class="orient-icon" aria-hidden="true">📱</div>
+  <h2>Please rotate your device</h2>
+  <p>TapTalk works best in landscape orientation</p>
+</div>
+
+<!-- ========================================================
+     App shell
+     ======================================================== -->
+<div id="app">
+
+  <!-- Navigation -->
+  <nav id="main-nav" aria-label="Main navigation">
+    <button class="nav-btn active"
+            data-view="core-vocab"
+            id="nav-core-vocab"
+            aria-current="page">
+      Core Vocabulary
+    </button>
+    <button class="nav-btn"
+            data-view="choice-board"
+            id="nav-choice-board">
+      Choice Board
+    </button>
+    <button class="nav-btn"
+            data-view="dev-preview"
+            id="nav-dev-preview">
+      ⚙ Dev Preview
+    </button>
+    <button id="partner-mode-toggle"
+            aria-pressed="false"
+            aria-label="Toggle Partner Mode"
+            title="Enable Partner Mode">
+      🔒
+    </button>
+    <!-- Subtle gear — hold 3 seconds to open Settings -->
+    <button id="settings-btn"
+            aria-label="Open settings (hold 3 seconds)"
+            title="Hold 3 seconds to open settings">
+      ⚙
+    </button>
+  </nav>
+
+  <!-- ======================================================
+       View 1 — Core Vocabulary (Yes / No)
+       Split screen: massive touch targets, fixed layout
+       ====================================================== -->
+  <section id="view-core-vocab"
+           class="view active"
+           aria-label="Core Vocabulary">
+
+    <button id="btn-yes"
+            class="vocab-btn yes-btn"
+            aria-label="Yes">
+      <img id="img-yes" class="pictogram" alt="Yes pictogram" />
+      <span class="btn-label">YES</span>
+    </button>
+
+    <button id="btn-no"
+            class="vocab-btn no-btn"
+            aria-label="No">
+      <img id="img-no" class="pictogram" alt="No pictogram" />
+      <span class="btn-label">NO</span>
+    </button>
+
+  </section>
+
+  <!-- ======================================================
+       View 2 — Choice Board (Tap-to-Fill)
+       ====================================================== -->
+  <section id="view-choice-board"
+           class="view"
+           aria-label="Choice Board">
+
+    <!-- Display area: two slots + OR divider + Clear -->
+    <div id="choice-display" role="region" aria-label="Choice display">
+      <div id="slot-1"
+           class="choice-slot empty"
+           role="button"
+           aria-label="Choice slot 1 — tap to speak"
+           tabindex="0">
+        <span class="slot-placeholder" aria-hidden="true">?</span>
+      </div>
+
+      <div id="or-divider" aria-hidden="true">OR</div>
+
+      <div id="slot-2"
+           class="choice-slot empty"
+           role="button"
+           aria-label="Choice slot 2 — tap to speak"
+           tabindex="0">
+        <span class="slot-placeholder" aria-hidden="true">?</span>
+      </div>
+
+      <button id="btn-clear" class="clear-btn" aria-label="Clear both choices">
+        Clear
+      </button>
+    </div>
+
+    <!-- Bank area: populated by app.js -->
+    <div id="choice-bank"
+         role="list"
+         aria-label="Vocabulary bank">
+    </div>
+
+  </section>
+
+  <!-- ======================================================
+       View 3 — Dev Preview
+       Full-screen developer dashboard: app status + event log
+       ====================================================== -->
+  <section id="view-dev-preview"
+           class="view"
+           aria-label="Developer Preview">
+
+    <!-- Status bar -->
+    <div id="dev-status-bar">
+      <span class="dev-status-item">
+        <span class="dev-status-label">Version</span>
+        <span id="dev-status-version" class="dev-status-value">1.0.0</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">Session</span>
+        <span id="dev-status-session" class="dev-status-value">—</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">SW</span>
+        <span id="dev-status-sw" class="dev-status-value dev-status-pending">checking…</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">DB</span>
+        <span id="dev-status-db" class="dev-status-value dev-status-pending">opening…</span>
+      </span>
+    </div>
+
+    <!-- Full-height event log -->
+    <div id="dev-preview-log" role="log" aria-live="polite" aria-label="IndexedDB event log">
+      <div id="dev-preview-entries"></div>
+    </div>
+
+    <!-- Action footer -->
+    <div id="dev-preview-footer">
+      <button id="dev-preview-clear" aria-label="Clear event log display">Clear Display</button>
+      <button id="dev-preview-refresh" aria-label="Refresh event log from database">↺ Refresh</button>
+      <span id="dev-preview-count">0 events logged</span>
+      <button id="dev-preview-export" aria-label="Export all data as JSON">⬇ Export JSON</button>
+    </div>
+
+  </section>
+
+  <!-- ======================================================
+       Persistent footer — Turn Taking
+       Always visible; supports communication partner modeling.
+       ====================================================== -->
+  <footer id="turn-footer" aria-label="Turn taking">
+
+    <button id="btn-my-turn"
+            class="turn-btn"
+            aria-label="My Turn">
+      <img id="img-my-turn" class="turn-pict" alt="My Turn pictogram" />
+      <span class="turn-label">MY TURN</span>
+    </button>
+
+    <button id="btn-your-turn"
+            class="turn-btn"
+            aria-label="Your Turn">
+      <img id="img-your-turn" class="turn-pict" alt="Your Turn pictogram" />
+      <span class="turn-label">YOUR TURN</span>
+    </button>
+
+  </footer>
+
+</div><!-- /#app -->
+
+<script src="db.js"></script>
+<script src="data-export.js"></script>
+<script src="app.js"></script>
+
+<!-- ========================================================
+     Settings Modal
+     Opened via 3-second long-press on the gear button.
+     Teacher-only: configure active vocabulary & TTS voice.
+     ======================================================== -->
+<div id="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="settings-panel">
+
+    <!-- Header -->
+    <div class="settings-header">
+      <h2 class="settings-title">⚙ Settings</h2>
+      <button id="settings-modal-close" class="settings-close-btn" aria-label="Close settings">✕</button>
+    </div>
+
+    <!-- Voice selector -->
+    <div class="settings-section">
+      <label class="settings-label" for="voice-select">Voice</label>
+      <select id="voice-select" class="settings-voice-select"></select>
+    </div>
+
+    <!-- Anderson-OS Sync -->
+    <div class="settings-section">
+      <span class="settings-label">Anderson-OS Sync</span>
+      <p id="aos-db-summary" class="aos-summary">Loading…</p>
+      <div class="aos-btn-row">
+        <button id="aos-export-btn" class="aos-export-btn">⬆ Export Data</button>
+        <button id="aos-clear-btn" class="aos-clear-btn">🗑 Clear Local Database</button>
+      </div>
+    </div>
+
+    <!-- Vocabulary picker -->
+    <div class="settings-section settings-vocab-section">
+      <div class="settings-vocab-header">
+        <span class="settings-label">Choice Bank Words</span>
+        <input id="settings-search" type="search" class="settings-search"
+               placeholder="Search words…" autocomplete="off" autocorrect="off" />
+      </div>
+      <div id="settings-word-grid" class="settings-word-grid" role="list"
+           aria-label="Available vocabulary words"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="settings-footer">
+      <button id="settings-save" class="settings-save-btn">Save &amp; Close</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

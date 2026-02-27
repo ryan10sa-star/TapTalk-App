@@ -1,0 +1,15 @@
+{
+  "name": "taptalk-aac",
+  "version": "1.0.0",
+  "description": "Offline-first Augmentative and Alternative Communication PWA",
+  "private": true,
+  "scripts": {
+    "fetch-images": "node fetch-aac-images.js",
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
