@@ -249,7 +249,7 @@ const Pictogram = (() => {
   };
 
   function _localPath(word) {
-    return `${basePath}aac-images/${word.toLowerCase()}`;
+    return `./aac-images/${word.toLowerCase()}.png`;
   }
 
   /**
@@ -257,7 +257,7 @@ const Pictogram = (() => {
    * If the file is somehow absent the element stays blank — no broken icon.
    */
   function load(imgEl, word) {
-    imgEl.src = _localPath(word);
+    imgEl.src = `./aac-images/${word.toLowerCase()}.png`;
     imgEl.alt = word;
     // No fallback: let the browser show the broken image icon if missing
     imgEl.onerror = null;
