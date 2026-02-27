@@ -1,0 +1,17 @@
+{
+  "name": "TapTalk AAC - Lake County Edition",
+  "short_name": "TapTalk",
+  "description": "Premium AAC communication app for Maya",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
