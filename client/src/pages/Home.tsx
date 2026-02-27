@@ -265,6 +265,19 @@ export default function Home() {
         )}
       </main>
 
+      <footer className="shrink-0 px-3 py-1.5 border-t flex items-center justify-center" style={{ borderColor: "#E2E8F0" }}>
+        <a
+          href="https://arasaac.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted-foreground"
+          data-testid="link-attribution"
+          tabIndex={-1}
+        >
+          Pictograms by ARASAAC © Gobierno de Aragón, Spain · CC BY-NC-SA 4.0 · arasaac.org
+        </a>
+      </footer>
+
       {showAnalytics && (
         <AnalyticsPanel onClose={() => setShowAnalytics(false)} />
       )}

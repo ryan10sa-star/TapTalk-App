@@ -44,8 +44,30 @@ A premium Augmentative and Alternative Communication (AAC) Progressive Web App b
 Run `generate_audio.py` with `ELEVENLABS_API_KEY` set to populate `/client/public/aac-audio/`.
 Without audio files, the app falls back to the browser's Web Speech API automatically.
 
+## Image Attribution
+
+All pictograms sourced from **ARASAAC** (Aragonese Portal of Augmentative and Alternative Communication):
+- **License**: Creative Commons CC BY-NC-SA 4.0
+- **Source**: https://arasaac.org
+- **Author**: Sergio Palao
+- **Copyright**: © Gobierno de Aragón, Spain. All rights reserved.
+
+253 pictograms downloaded using `scripts/fetch-arasaac-images.mjs` and stored in `client/public/aac-images/`.
+
+For words not found in ARASAAC (culturally specific terms), closest semantic match pictograms were used.
+
+Attribution is displayed in the app footer as required by the CC BY-NC-SA 4.0 license.
+
 ## Development
 
 ```
 npm run dev
+```
+
+## Image Scripts
+
+```bash
+# Download/refresh ARASAAC images
+node scripts/fetch-arasaac-images.mjs     # initial fetch
+node scripts/fetch-remaining-images.mjs   # retry missing
 ```
