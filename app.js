@@ -13,8 +13,6 @@ const CONFIG = Object.freeze({
   DB_NAME: 'taptalk-db',
   DB_VERSION: 1,
   STORE_EVENTS: 'events',
-  ARASAAC_SEARCH: 'https://api.arasaac.org/v1/pictograms/en/search/',
-  ARASAAC_IMG_BASE: 'https://static.arasaac.org/pictograms/',
   BANK_ITEMS: ['Rocks', 'Ball', 'Walk', 'Coloring', 'Book', 'Math', 'Writing'],
   CORE_VOCAB: ['Yes', 'No'],
 });
@@ -122,55 +120,29 @@ const Speech = (() => {
 
 /* ============================================================
    PICTOGRAM MODULE
-   Fetches ARASAAC pictograms and caches URLs in memory.
-   Service worker handles HTTP-level caching for offline use.
+   Resolves pictograms from locally-downloaded files.
+   Run `npm run fetch-images` before serving to populate
+   public/aac-images/{word}.png for all core vocabulary.
    ============================================================ */
 const Pictogram = (() => {
-  const _urlCache = new Map(); // word (lowercase) → image URL
-
-  async function _fetchId(word) {
-    const key = word.toLowerCase();
-    if (_urlCache.has(key)) return _urlCache.get(key);
-
-    try {
-      const res = await fetch(
-        `${CONFIG.ARASAAC_SEARCH}${encodeURIComponent(key)}`
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const url = `${CONFIG.ARASAAC_IMG_BASE}${data[0]._id}/${data[0]._id}_500.png`;
-        _urlCache.set(key, url);
-        return url;
-      }
-    } catch (err) {
-      console.warn(`[TapTalk] Pictogram fetch failed for "${word}":`, err.message);
-    }
-    return null;
+  /** Absolute-root path for a pre-downloaded pictogram */
+  function _localPath(word) {
+    return `./aac-images/${word.toLowerCase()}.png`;
   }
 
   /**
-   * Load a pictogram into an <img> element.
-   * Falls back gracefully (image stays hidden, label remains visible).
+   * Load a pictogram into an <img> element from the local file.
+   * If the file is absent (images not yet downloaded), the element
+   * stays hidden and the text label remains visible — no broken icon.
    */
-  async function load(imgEl, word) {
-    imgEl.classList.add('pict-loading');
-    const url = await _fetchId(word);
-    if (url) {
-      imgEl.src = url;
-      imgEl.onload = () => imgEl.classList.remove('pict-loading');
-      imgEl.onerror = () => {
-        imgEl.classList.remove('pict-loading');
-        imgEl.removeAttribute('src');
-      };
-    } else {
-      imgEl.classList.remove('pict-loading');
-    }
+  function load(imgEl, word) {
+    imgEl.src = _localPath(word);
+    imgEl.onerror = () => imgEl.removeAttribute('src');
   }
 
-  /** Return the cached URL for a word (used when filling choice slots) */
+  /** Return the local path for a word (used when filling choice slots) */
   function getCachedUrl(word) {
-    return _urlCache.get(word.toLowerCase()) || null;
+    return _localPath(word);
   }
 
   return { load, getCachedUrl };

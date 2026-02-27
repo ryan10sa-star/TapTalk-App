@@ -3,9 +3,9 @@
    Cache-first Service Worker.  Works perfectly in airplane mode.
    ============================================================ */
 
-const CACHE_NAME = 'taptalk-v2';
+const CACHE_NAME = 'taptalk-v3';
 
-/** Static app-shell assets cached on install */
+/** Static app-shell assets — must all be present; cached atomically on install */
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -16,10 +16,34 @@ const STATIC_ASSETS = [
   './icon.svg',
 ];
 
-/* ---------- Install: pre-cache shell ---------- */
+/**
+ * AAC pictogram images — populated by `npm run fetch-images` before deploy.
+ * Cached individually with allSettled so a missing file never breaks install.
+ */
+const AAC_IMAGE_ASSETS = [
+  './aac-images/yes.png',
+  './aac-images/no.png',
+  './aac-images/rocks.png',
+  './aac-images/ball.png',
+  './aac-images/walk.png',
+  './aac-images/coloring.png',
+  './aac-images/book.png',
+  './aac-images/math.png',
+  './aac-images/writing.png',
+];
+
+/* ---------- Install: pre-cache shell + AAC images ---------- */
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      /* App shell must all succeed — fail fast if any is missing */
+      await cache.addAll(STATIC_ASSETS);
+      /* AAC images are populated at build time; tolerate missing files
+         so the SW still installs cleanly in a fresh dev checkout */
+      await Promise.allSettled(
+        AAC_IMAGE_ASSETS.map((url) => cache.add(url))
+      );
+    })
   );
   self.skipWaiting();
 });
