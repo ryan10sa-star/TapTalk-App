@@ -204,6 +204,7 @@
 </div><!-- /#app -->
 
 <script src="db.js"></script>
+<script src="data-export.js"></script>
 <script src="app.js"></script>
 
 <!-- ========================================================
@@ -224,6 +225,16 @@
     <div class="settings-section">
       <label class="settings-label" for="voice-select">Voice</label>
       <select id="voice-select" class="settings-voice-select"></select>
+    </div>
+
+    <!-- Anderson-OS Sync -->
+    <div class="settings-section">
+      <span class="settings-label">Anderson-OS Sync</span>
+      <p id="aos-db-summary" class="aos-summary">Loading…</p>
+      <div class="aos-btn-row">
+        <button id="aos-export-btn" class="aos-export-btn">⬆ Export Data</button>
+        <button id="aos-clear-btn" class="aos-clear-btn">🗑 Clear Local Database</button>
+      </div>
     </div>
 
     <!-- Vocabulary picker -->

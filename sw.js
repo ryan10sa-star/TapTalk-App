@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   './styles.css',
   './app.js',
   './db.js',
+  './data-export.js',
   './manifest.json',
   './icon.svg',
 ];

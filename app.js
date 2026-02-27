@@ -538,6 +538,104 @@ const Orientation = (() => {
 })();
 
 /* ============================================================
+   ANDERSON-OS SYNC MODULE
+   Teacher-facing export and database management, accessible
+   from the hidden Settings modal.
+
+   • Mini-dashboard: live count + date of oldest record
+   • Export: Web Share API (AirDrop / email) → download fallback
+   • Clear: high-friction "type DELETE" confirmation
+   ============================================================ */
+const AndersonOS = (() => {
+  /* ── Mini-dashboard: summarise stored data ── */
+  async function refresh() {
+    const summary = document.getElementById('aos-db-summary');
+    if (!summary) return;
+    try {
+      const records = await CommDB.getAll();
+      if (records.length === 0) {
+        summary.textContent = 'No interactions stored yet.';
+        return;
+      }
+      const oldest = records.reduce(
+        (min, r) => (r.timestamp < min ? r.timestamp : min),
+        records[0].timestamp,
+      );
+      const since = new Date(oldest).toLocaleDateString();
+      summary.textContent =
+        `Currently storing ${records.length} interaction${records.length !== 1 ? 's' : ''} since ${since}.`;
+    } catch (_) {
+      summary.textContent = 'Unable to read database.';
+    }
+  }
+
+  /* ── Export: Web Share API → fallback download ── */
+  async function _export() {
+    try {
+      const payload  = await generateOSPayload();
+      const json     = JSON.stringify(payload, null, 2);
+      const blob     = new Blob([json], { type: 'application/json' });
+      const filename = `taptalk-export-${Date.now()}.json`;
+
+      /* Try Web Share API first (AirDrop / Files / email on iPad/iOS) */
+      if (navigator.canShare) {
+        try {
+          const file = new File([blob], filename, { type: 'application/json' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'TapTalk Export' });
+            DB.log('data_exported', { method: 'share', records: payload.metrics.totalEvents });
+            return;
+          }
+        } catch (shareErr) {
+          /* User cancelled or files-share unsupported — fall through to download */
+          if (shareErr.name !== 'AbortError') {
+            console.warn('[AndersonOS] Share unavailable, falling back to download:', shareErr);
+          } else {
+            return; /* User deliberately cancelled — do nothing */
+          }
+        }
+      }
+
+      /* Fallback: force a JSON file download */
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      DB.log('data_exported', { method: 'download', records: payload.metrics.totalEvents });
+    } catch (err) {
+      console.warn('[AndersonOS] Export failed:', err);
+    }
+  }
+
+  /* ── Clear: require the teacher to type DELETE ── */
+  async function _clear() {
+    const answer = window.prompt(
+      'This will permanently delete all stored interactions.\n\nType DELETE to confirm:',
+    );
+    if (answer !== 'DELETE') return;
+
+    try {
+      await CommDB.clearAll();
+      DB.log('database_cleared', {});
+      await refresh();
+    } catch (err) {
+      console.warn('[AndersonOS] Clear failed:', err);
+    }
+  }
+
+  function init() {
+    document.getElementById('aos-export-btn').addEventListener('click', _export);
+    document.getElementById('aos-clear-btn').addEventListener('click', _clear);
+  }
+
+  return { init, refresh };
+})();
+
+/* ============================================================
    SETTINGS MODULE
    Hidden gear button (3-second long-press) opens a full-screen
    modal where the teacher can:
@@ -612,6 +710,7 @@ const Settings = (() => {
       _renderVoices();
       document.getElementById('settings-search').value = '';
       _renderWordGrid(words, '');
+      AndersonOS.refresh();
       document.getElementById('settings-modal').classList.add('open');
     });
   }
@@ -781,6 +880,7 @@ async function init() {
   DevTools.init();
   Orientation.init();
   Settings.init();
+  AndersonOS.init();
 
   DB.log('session_start', {
     sessionId: SESSION_ID,

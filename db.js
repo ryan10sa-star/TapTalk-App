@@ -88,7 +88,22 @@ const CommDB = (() => {
     });
   }
 
-  return { logEvent, getAll };
+  /**
+   * Permanently delete every record from comm_events.
+   * Used by the Anderson-OS "Clear Local Database" action.
+   * @returns {Promise<void>}
+   */
+  async function clearAll() {
+    const db = await _open();
+    return new Promise((resolve, reject) => {
+      const tx  = db.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).clear();
+      req.onsuccess = () => resolve();
+      req.onerror   = () => reject(req.error);
+    });
+  }
+
+  return { logEvent, getAll, clearAll };
 })();
 
 /* ============================================================
