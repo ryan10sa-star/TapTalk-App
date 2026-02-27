@@ -33,14 +33,10 @@ MODEL_ID = "eleven_turbo_v2_5"
 BASE_URL = "https://api.elevenlabs.io/v1"
 
 VOICES = {
-    "sarah":     {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Sarah",    "gender": "Female", "accent": "American", "style": "Warm & Calm"},
-    "rachel":    {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel",   "gender": "Female", "accent": "American", "style": "Clear & Bright"},
-    "emily":     {"id": "LcfcDJNUP1GQjkzn1xUU", "name": "Emily",    "gender": "Female", "accent": "American", "style": "Gentle & Soft"},
-    "charlotte": {"id": "XB0fDUnXU5powFXDhCwa", "name": "Charlotte","gender": "Female", "accent": "British",  "style": "Crisp & Friendly"},
-    "adam":      {"id": "pNInz6obpgDQGcFmaJgB", "name": "Adam",     "gender": "Male",   "accent": "American", "style": "Steady & Clear"},
-    "josh":      {"id": "TxGEqnHWrfWFTfGW9XjX", "name": "Josh",     "gender": "Male",   "accent": "American", "style": "Deep & Warm"},
-    "daniel":    {"id": "onwK4e9ZLuTAKqWW03F9", "name": "Daniel",   "gender": "Male",   "accent": "British",  "style": "Authoritative"},
-    "antoni":    {"id": "ErXwobaYiN019PkySvjV", "name": "Antoni",   "gender": "Male",   "accent": "American", "style": "Relaxed & Friendly"},
+    "sarah":  {"id": "EXAVITQu4vr4xnSDxMaL", "name": "Sarah",  "gender": "Female", "accent": "American", "style": "Warm & Calm"},
+    "rachel": {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel", "gender": "Female", "accent": "American", "style": "Clear & Bright"},
+    "adam":   {"id": "pNInz6obpgDQGcFmaJgB", "name": "Adam",   "gender": "Male",   "accent": "American", "style": "Steady & Clear"},
+    "josh":   {"id": "TxGEqnHWrfWFTfGW9XjX", "name": "Josh",   "gender": "Male",   "accent": "American", "style": "Deep & Warm"},
 }
 
 LAKE_COUNTY_WORDS = {
