@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play, ThumbsUp, Activity } from "lucide-react";
+import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play, ThumbsUp, Activity, Plus, Trash2, CalendarDays, Home, GraduationCap } from "lucide-react";
 import { useSettings, hapticTap, VOICE_PROFILES, type VoiceProfile } from "@/lib/settingsContext";
 import { previewVoice } from "@/lib/audio";
 import { Button } from "@/components/ui/button";
+import { SCHOOL_SCHEDULE, HOME_SCHEDULE, ALL_SCHEDULE_OPTIONS, ITEM_COLORS as SCHEDULE_COLORS } from "@/pages/VisualSchedule";
 
 interface VocabWord {
   id: number;
@@ -280,7 +281,46 @@ export default function Settings({ onClose }: SettingsProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [healthState, setHealthState] = useState<"idle" | "running" | "done">("idle");
   const [healthResult, setHealthResult] = useState<HealthResult | null>(null);
+  const [schedEdit, setSchedEdit] = useState<Array<{ time: string; label: string }>>(() => {
+    try {
+      const s = localStorage.getItem("taptalk-schedule");
+      if (s) return JSON.parse(s);
+    } catch {}
+    return SCHOOL_SCHEDULE;
+  });
+  const [schedDropdown, setSchedDropdown] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const saveSchedEdit = useCallback((next: Array<{ time: string; label: string }>) => {
+    setSchedEdit(next);
+    try {
+      localStorage.setItem("taptalk-schedule", JSON.stringify(next));
+      localStorage.removeItem("taptalk-completed");
+    } catch {}
+  }, []);
+
+  const loadPreset = useCallback((preset: typeof SCHOOL_SCHEDULE) => {
+    saveSchedEdit([...preset]);
+    setSchedDropdown(null);
+  }, [saveSchedEdit]);
+
+  const addSchedSlot = useCallback(() => {
+    saveSchedEdit([...schedEdit, { time: "12:00", label: "Free Play" }]);
+  }, [schedEdit, saveSchedEdit]);
+
+  const removeSchedSlot = useCallback((i: number) => {
+    saveSchedEdit(schedEdit.filter((_, idx) => idx !== i));
+    setSchedDropdown(null);
+  }, [schedEdit, saveSchedEdit]);
+
+  const updateSchedTime = useCallback((i: number, time: string) => {
+    saveSchedEdit(schedEdit.map((s, idx) => idx === i ? { ...s, time } : s));
+  }, [schedEdit, saveSchedEdit]);
+
+  const updateSchedLabel = useCallback((i: number, label: string) => {
+    saveSchedEdit(schedEdit.map((s, idx) => idx === i ? { ...s, label } : s));
+    setSchedDropdown(null);
+  }, [schedEdit, saveSchedEdit]);
 
   useEffect(() => {
     fetch("/vocabulary.json")
@@ -717,6 +757,121 @@ export default function Settings({ onClose }: SettingsProps) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+
+        <SectionHeader>Visual Schedule</SectionHeader>
+        <div className="px-4 mb-1">
+          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#1F2937", border: "1px solid #374151" }}>
+
+            <div className="flex items-center gap-2 p-3 pb-2" style={{ borderBottom: "1px solid #374151" }}>
+              <CalendarDays size={15} style={{ color: "#60A5FA" }} />
+              <span className="text-xs font-bold flex-1" style={{ color: "#F9FAFB" }}>Day Schedule</span>
+              <button
+                onClick={() => loadPreset(SCHOOL_SCHEDULE)}
+                data-testid="button-preset-school"
+                className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg transition-all"
+                style={{ backgroundColor: "#1E3A5F", color: "#60A5FA" }}
+              >
+                <GraduationCap size={12} /> School
+              </button>
+              <button
+                onClick={() => loadPreset(HOME_SCHEDULE)}
+                data-testid="button-preset-home"
+                className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg transition-all"
+                style={{ backgroundColor: "#064E3B", color: "#34D399" }}
+              >
+                <Home size={12} /> Home
+              </button>
+            </div>
+
+            <div className="p-2 space-y-1.5" data-testid="settings-schedule-list">
+              {schedEdit.map((slot, i) => (
+                <div key={i} className="flex items-center gap-1.5" data-testid={`settings-slot-${i}`}>
+                  <input
+                    type="time"
+                    value={(() => {
+                      const [hStr, mStr] = slot.time.split(":");
+                      const h = parseInt(hStr ?? "0", 10);
+                      const m = parseInt(mStr ?? "0", 10);
+                      if (isNaN(h) || isNaN(m)) return "12:00";
+                      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+                    })()}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (!raw) return;
+                      const [hStr, mStr] = raw.split(":");
+                      const h = parseInt(hStr, 10);
+                      const m = parseInt(mStr, 10);
+                      const display = `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")}`;
+                      updateSchedTime(i, display);
+                    }}
+                    data-testid={`settings-time-${i}`}
+                    className="w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ backgroundColor: "#111827", color: "#F9FAFB", border: "1px solid #374151" }}
+                  />
+
+                  <div className="relative flex-1">
+                    <button
+                      onClick={() => setSchedDropdown(schedDropdown === i ? null : i)}
+                      data-testid={`settings-label-${i}`}
+                      className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold truncate"
+                      style={{
+                        backgroundColor: "#111827",
+                        color: SCHEDULE_COLORS[slot.label] ?? "#94A3B8",
+                        border: "1px solid #374151",
+                      }}
+                    >
+                      {slot.label}
+                    </button>
+                    {schedDropdown === i && (
+                      <div
+                        className="absolute left-0 top-full mt-1 z-30 rounded-xl shadow-xl p-2"
+                        style={{ backgroundColor: "#1F2937", border: "1px solid #374151", width: 220 }}
+                      >
+                        <div className="grid grid-cols-2 gap-1 max-h-48 overflow-y-auto">
+                          {ALL_SCHEDULE_OPTIONS.map((opt) => (
+                            <button
+                              key={opt}
+                              onClick={() => updateSchedLabel(i, opt)}
+                              data-testid={`settings-option-${opt.toLowerCase().replace(/\s+/g, "-")}`}
+                              className="text-left px-2 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors truncate"
+                              style={{ color: SCHEDULE_COLORS[opt] ?? "#94A3B8" }}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => removeSchedSlot(i)}
+                    data-testid={`settings-remove-slot-${i}`}
+                    className="p-1.5 rounded-lg hover:bg-red-900 transition-colors shrink-0"
+                    aria-label={`Remove slot ${i}`}
+                  >
+                    <Trash2 size={14} className="text-red-400" />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                onClick={addSchedSlot}
+                data-testid="button-settings-add-slot"
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold border-dashed border-2 transition-all"
+                style={{ borderColor: "#374151", color: "#6B7280" }}
+              >
+                <Plus size={13} /> Add Activity
+              </button>
+            </div>
+
+            <div className="px-3 pb-2 pt-1">
+              <div className="text-xs" style={{ color: "#4B5563" }}>
+                {schedEdit.length} activit{schedEdit.length === 1 ? "y" : "ies"} · changes auto-saved
+              </div>
+            </div>
           </div>
         </div>
 

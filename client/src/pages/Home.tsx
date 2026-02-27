@@ -143,13 +143,16 @@ export default function Home() {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950" data-testid="home-page">
       <header className="shrink-0 flex items-center gap-2 px-3 py-2.5 border-b bg-white dark:bg-slate-900" style={{ borderColor: "#E2E8F0" }}>
-        <div className="flex items-center gap-2 mr-auto">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg font-black text-white text-sm" style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)" }}>
+        <div className="flex items-center gap-2.5 mr-auto">
+          <div
+            className="flex items-center justify-center w-9 h-9 rounded-xl font-black text-white text-base shrink-0"
+            style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)", boxShadow: "0 2px 8px #2563EB44" }}
+          >
             TT
           </div>
-          <div className="hidden sm:block">
-            <div className="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">TapTalk AAC</div>
-            <div className="text-xs text-muted-foreground leading-tight">Lake County Edition</div>
+          <div>
+            <div className="text-base font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">TapTalk</div>
+            <div className="text-xs font-semibold leading-tight" style={{ color: "#7C3AED" }}>AAC</div>
           </div>
         </div>
 

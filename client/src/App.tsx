@@ -84,22 +84,24 @@ function AppShell() {
         style={{
           backgroundColor: "#F8FAFC",
           borderTop: "1px solid #E2E8F0",
-          minHeight: "22px",
-          paddingTop: "3px",
-          paddingBottom: "3px",
+          minHeight: "26px",
+          paddingTop: "4px",
+          paddingBottom: "4px",
         }}
         data-testid="app-footer"
       >
-        <a
-          href="https://arasaac.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs"
-          style={{ color: "#CBD5E1", textDecoration: "none" }}
-          tabIndex={-1}
-        >
-          Pictograms © ARASAAC · CC BY-NC-SA 4.0
-        </a>
+        <div className="flex items-center gap-1.5">
+          <div
+            className="flex items-center justify-center rounded font-black text-white leading-none"
+            style={{ background: "linear-gradient(135deg, #2563EB, #7C3AED)", width: 14, height: 14, fontSize: 7 }}
+          >
+            TT
+          </div>
+          <span className="text-xs font-black tracking-tight" style={{ color: "#2563EB", letterSpacing: "-0.01em" }}>
+            TapTalk
+          </span>
+          <span className="text-xs" style={{ color: "#CBD5E1" }}>· AAC</span>
+        </div>
 
         <button
           onMouseDown={startGearHold}
