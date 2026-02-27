@@ -1,0 +1,54 @@
+The "Master One-Shot" Replit Prompt
+Instructions: Create a new Vite (HTML/CSS/JS) project in Replit. Open the Replit Agent (the chat on the right) and paste this entire block.
+
+Project: TapTalk AAC - Premium Lake County Edition (v2.0)
+
+1. Core Infrastructure:
+
+Build a high-performance, responsive PWA for my daughter Maya.
+
+Zero-Simulation Policy: Completely forbid SVG or CSS-generated placeholders. If an image or audio file is missing, the app should show a broken icon or stay silent—no "helpful" colored boxes.
+
+Responsiveness: Use CSS Grid and Flexbox with fluid typography (clamp) to ensure it scales perfectly from an iPhone to an iPad to a 4K Monitor.
+
+2. Asset Pipeline (250+ Items):
+
+Images: ./public/aac-images/${word.toLowerCase()}.png
+
+Audio: ./public/aac-audio/${word.toLowerCase()}.mp3
+
+Vocabulary: Generate a vocabulary.json with 250+ words including:
+
+Lake County CA Specialties: Frybread, Acorn Mush, Pozole, Tamales, Conchas, Street Tacos, Horchata, Pears, Walnuts.
+
+Core/Actions/Feelings: Essential communication tiles.
+
+3. Voice Automation Script (Python):
+
+Create a file named generate_audio.py.
+
+This script must:
+
+Read vocabulary.json.
+
+Use the ElevenLabs API to generate speech for every word.
+
+Save the output to ./public/aac-audio/ as lowercase .mp3 files.
+
+Use requests to handle the API calls directly so I don't need extra libraries.
+
+4. Premium Logic & PWA:
+
+app.js: Implement a pre-loading audio pool. When a view loads, the browser should background-fetch the MP3s for those tiles to ensure zero-latency when Maya taps them.
+
+Partner Mode: Add a "Lock" button requiring a 3-second hold to toggle. When locked, navigation is disabled.
+
+sw.js: Use CACHE_NAME = 'taptalk-premium-v2026'. Implement a Stale-While-Revalidate strategy for all images and audio files.
+
+Logging: Save every tap event to IndexedDB for "Anderson-OS" data analysis.
+
+5. UI/UX Style:
+
+Modern, clean, and trades-focused. Use soft haptic-feedback animations (CSS transforms), high-contrast labels, and a consistent grid layout.
+
+Deliverable: Generate index.html, app.js, styles.css, sw.js, vocabulary.json, vite.config.js, and generate_audio.py
