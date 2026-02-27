@@ -1,4 +1,4 @@
-# TapTalk AAC — Lake County Edition (v3.0)
+# TapTalk AAC — Lake County Edition (v4.0)
 
 A premium Augmentative and Alternative Communication (AAC) Progressive Web App built for Maya.
 
@@ -8,7 +8,7 @@ A premium Augmentative and Alternative Communication (AAC) Progressive Web App b
 - **Backend**: Express.js (minimal — serves static assets and API stubs)
 - **State**: React useState/useMemo (no server DB needed — all data is local JSON)
 - **Storage**: IndexedDB (Anderson-OS tap event logging, client-side only)
-- **Audio**: Web Speech API (TTS fallback) + MP3 file loading from `/aac-audio/`
+- **Audio**: ElevenLabs eleven_turbo_v2_5 baked MP3s (voice-specific folders) + Web Speech API fallback
 - **PWA**: Service Worker (`/sw.js`) with Stale-While-Revalidate for media assets
 
 ## Pages / Views (Bottom Navigation)
@@ -27,10 +27,13 @@ A premium Augmentative and Alternative Communication (AAC) Progressive Web App b
 - `client/src/components/CategoryNav.tsx` — Horizontal category filter
 - `client/src/components/PartnerModeLock.tsx` — 3-second hold lock/unlock
 - `client/src/components/AnalyticsPanel.tsx` — Anderson-OS usage analytics
-- `client/src/lib/audio.ts` — Audio pool + Web Speech API fallback
+- `client/src/lib/audio.ts` — Multi-voice audio pool, voice-folder routing, Web Speech API fallback
+- `client/src/lib/settingsContext.tsx` — Global settings context (sensory profile, voice, vocab masking)
 - `client/src/lib/indexeddb.ts` — IndexedDB tap event logging
+- `client/src/pages/Settings.tsx` — Teacher's Vault (dark-mode settings panel, 3s hold to access)
 - `client/public/sw.js` — Service worker (CACHE_NAME: taptalk-premium-v2026)
-- `generate_audio.py` — ElevenLabs audio generation script
+- `scripts/generate_audio.py` — ElevenLabs multi-voice bake pipeline (8 voices, Lake County optimization)
+- `scripts/audit_assets.py` — Asset verification: checks all 278 words have PNG + MP3
 
 ## Features
 
@@ -46,10 +49,42 @@ A premium Augmentative and Alternative Communication (AAC) Progressive Web App b
 - **PWA**: manifest + service worker for offline support
 - **Search**: full-text search across all vocabulary
 
-## Audio Files
+## Audio System
 
-Run `generate_audio.py` with `ELEVENLABS_API_KEY` set to populate `/client/public/aac-audio/`.
-Without audio files, the app falls back to the browser's Web Speech API automatically.
+**Model**: `eleven_turbo_v2_5` (ultra-low latency)
+**Status**: Sarah voice fully baked — 278/278 words at `/client/public/aac-audio/sarah/`
+
+**8 Voice Profiles** (selectable in Teacher's Vault settings):
+| Slug | Name | Gender | Accent | Style |
+|------|------|--------|--------|-------|
+| sarah ⭐ | Sarah | Female | American | Warm & Calm |
+| rachel | Rachel | Female | American | Clear & Bright |
+| emily | Emily | Female | American | Gentle & Soft |
+| charlotte | Charlotte | Female | British | Crisp & Friendly |
+| adam | Adam | Male | American | Steady & Clear |
+| josh | Josh | Male | American | Deep & Warm |
+| daniel | Daniel | Male | British | Authoritative |
+| antoni | Antoni | Male | American | Relaxed & Friendly |
+
+**To bake a voice:**
+```bash
+python scripts/generate_audio.py --voice rachel     # single voice
+python scripts/generate_audio.py --all-voices       # all 8 (takes ~20 min)
+python scripts/audit_assets.py                      # verify all assets
+```
+
+**Lake County words** (Frybread, Tamales, Pomo, etc.) use `stability: 0.85` for pronunciation integrity.
+Without audio files, app falls back to Web Speech API automatically.
+
+## Teacher's Vault (Settings)
+
+Access: **3-second hold** on the tiny gear icon in the bottom attribution bar.
+
+- **Sensory Profile**: Visual Celebrations toggle, High-Energy Audio toggle, Haptic Feedback toggle
+- **Communication Voice**: 8-voice picker with Preview button
+- **Vocabulary Masking**: Searchable grid of all 278 words — toggle any word off to hide it app-wide
+- **Diagnostic**: "Run Test" button to preview the current sensory profile safely before use
+- All settings auto-saved to localStorage, survive hard refresh
 
 ## Image Attribution
 

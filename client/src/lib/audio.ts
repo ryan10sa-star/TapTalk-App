@@ -2,25 +2,56 @@ const audioCache = new Map<string, HTMLAudioElement>();
 const preloadQueue = new Set<string>();
 
 let _highEnergyEnabled = true;
+let _activeVoiceSlug = "sarah";
 
 export function setAudioHighEnergy(enabled: boolean) {
   _highEnergyEnabled = enabled;
 }
 
-export function speakWord(word: string): void {
-  const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "");
-  const audioPath = `/aac-audio/${fileName}.mp3`;
-
-  if (audioCache.has(audioPath)) {
-    const audio = audioCache.get(audioPath)!;
-    audio.currentTime = 0;
-    audio.play().catch(() => fallbackSpeak(word));
-    return;
+export function setActiveVoiceSlug(slug: string) {
+  if (_activeVoiceSlug !== slug) {
+    _activeVoiceSlug = slug;
+    audioCache.clear();
   }
+}
 
-  const audio = new Audio(audioPath);
-  audio.onerror = () => { fallbackSpeak(word); };
-  audio.oncanplaythrough = () => { audioCache.set(audioPath, audio); };
+function resolveAudioPath(word: string): string[] {
+  const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+  return [
+    `/aac-audio/${_activeVoiceSlug}/${fileName}.mp3`,
+    `/aac-audio/${fileName}.mp3`,
+  ];
+}
+
+export function speakWord(word: string): void {
+  const paths = resolveAudioPath(word);
+
+  const tryPath = (index: number) => {
+    if (index >= paths.length) {
+      fallbackSpeak(word);
+      return;
+    }
+    const path = paths[index];
+    if (audioCache.has(path)) {
+      const audio = audioCache.get(path)!;
+      audio.currentTime = 0;
+      audio.play().catch(() => tryPath(index + 1));
+      return;
+    }
+    const audio = new Audio(path);
+    audio.onerror = () => tryPath(index + 1);
+    audio.oncanplaythrough = () => { audioCache.set(path, audio); };
+    audio.play().catch(() => tryPath(index + 1));
+  };
+
+  tryPath(0);
+}
+
+export function previewVoice(voiceSlug: string, word = "Hello"): void {
+  const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "");
+  const path = `/aac-audio/${voiceSlug}/${fileName}.mp3`;
+  const audio = new Audio(path);
+  audio.onerror = () => fallbackSpeak(word);
   audio.play().catch(() => fallbackSpeak(word));
 }
 
@@ -46,15 +77,15 @@ export function playCelebrationSound(): void {
 
 export function preloadAudio(words: string[]): void {
   words.forEach((word) => {
-    const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "");
-    const audioPath = `/aac-audio/${fileName}.mp3`;
-    if (audioCache.has(audioPath) || preloadQueue.has(audioPath)) return;
-    preloadQueue.add(audioPath);
+    const paths = resolveAudioPath(word);
+    const primary = paths[0];
+    if (audioCache.has(primary) || preloadQueue.has(primary)) return;
+    preloadQueue.add(primary);
     const audio = new Audio();
     audio.preload = "auto";
-    audio.src = audioPath;
-    audio.oncanplaythrough = () => { audioCache.set(audioPath, audio); preloadQueue.delete(audioPath); };
-    audio.onerror = () => { preloadQueue.delete(audioPath); };
+    audio.src = primary;
+    audio.oncanplaythrough = () => { audioCache.set(primary, audio); preloadQueue.delete(primary); };
+    audio.onerror = () => { preloadQueue.delete(primary); };
   });
 }
 

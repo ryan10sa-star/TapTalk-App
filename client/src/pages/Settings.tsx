@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ToggleLeft, ToggleRight, ChevronRight, ShieldCheck } from "lucide-react";
-import { useSettings, hapticTap } from "@/lib/settingsContext";
+import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play } from "lucide-react";
+import { useSettings, hapticTap, VOICE_PROFILES, type VoiceProfile } from "@/lib/settingsContext";
+import { previewVoice } from "@/lib/audio";
 import { Button } from "@/components/ui/button";
 
 interface VocabWord {
@@ -80,6 +81,91 @@ function SettingRow({
       </div>
       <Toggle on={value} onChange={onChange} testId={testId} />
     </div>
+  );
+}
+
+function VoiceCard({
+  voice,
+  selected,
+  onSelect,
+}: {
+  voice: VoiceProfile;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const [previewing, setPreviewing] = useState(false);
+  const isFemale = voice.gender === "female";
+
+  const handlePreview = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewing(true);
+    previewVoice(voice.slug, "Hello");
+    setTimeout(() => setPreviewing(false), 1500);
+  };
+
+  return (
+    <button
+      onClick={onSelect}
+      data-testid={`voice-card-${voice.slug}`}
+      aria-pressed={selected}
+      className="relative flex flex-col gap-1.5 p-3 rounded-xl text-left transition-all duration-150 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+      style={{
+        backgroundColor: selected ? "#1E3A5F" : "#1F2937",
+        border: `2px solid ${selected ? "#3B82F6" : "#374151"}`,
+      }}
+    >
+      {voice.primary && (
+        <span
+          className="absolute top-2 right-2 text-xs font-black px-1.5 py-0.5 rounded"
+          style={{ backgroundColor: "#064E3B", color: "#34D399", fontSize: "9px" }}
+        >
+          DEFAULT
+        </span>
+      )}
+      <div className="flex items-center gap-2">
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+          style={{
+            backgroundColor: isFemale ? "#DB277733" : "#2563EB33",
+            color: isFemale ? "#F472B6" : "#60A5FA",
+          }}
+        >
+          {isFemale ? "♀" : "♂"}
+        </div>
+        <div>
+          <div className="font-bold text-sm leading-tight" style={{ color: selected ? "#F9FAFB" : "#D1D5DB" }}>
+            {voice.name}
+          </div>
+          <div className="text-xs leading-tight" style={{ color: "#6B7280" }}>{voice.accent}</div>
+        </div>
+      </div>
+      <div className="text-xs leading-snug" style={{ color: selected ? "#93C5FD" : "#4B5563" }}>
+        {voice.style}
+      </div>
+      <button
+        onClick={handlePreview}
+        data-testid={`voice-preview-${voice.slug}`}
+        className="mt-0.5 flex items-center gap-1 text-xs px-2 py-1 rounded-lg self-start transition-all"
+        style={{
+          backgroundColor: previewing ? "#1D4ED8" : "#374151",
+          color: previewing ? "white" : "#9CA3AF",
+        }}
+        aria-label={`Preview ${voice.name}`}
+      >
+        <Play size={9} />
+        {previewing ? "Playing…" : "Preview"}
+      </button>
+      {selected && (
+        <div
+          className="absolute bottom-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: "#3B82F6" }}
+        >
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <path d="M1 4l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -311,6 +397,23 @@ export default function Settings({ onClose }: SettingsProps) {
               <div className="text-xs mt-0.5 leading-snug" style={{ color: "#6B7280" }}>Device vibration on every tile tap</div>
             </div>
             <Toggle on={settings.hapticEnabled} onChange={(v) => update({ hapticEnabled: v })} testId="toggle-haptic" />
+          </div>
+        </div>
+
+        <SectionHeader>Communication Voice</SectionHeader>
+        <div className="px-4 mb-1">
+          <p className="text-xs mb-3 leading-relaxed" style={{ color: "#6B7280" }}>
+            Select Maya's voice. Run <span style={{ color: "#60A5FA", fontFamily: "monospace" }}>python scripts/generate_audio.py --voice {"{slug}"}</span> to bake audio for each profile.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {VOICE_PROFILES.map((voice) => (
+              <VoiceCard
+                key={voice.slug}
+                voice={voice}
+                selected={settings.selectedVoiceSlug === voice.slug}
+                onSelect={() => { hapticTap(settings.hapticEnabled, 30); update({ selectedVoiceSlug: voice.slug }); }}
+              />
+            ))}
           </div>
         </div>
 
