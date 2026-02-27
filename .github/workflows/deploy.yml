@@ -44,7 +44,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Deploy straight from the repo root — no build step needed.
-          # The app is plain HTML/CSS/JS; all paths use ./ relative refs.
+          # All app files (HTML/CSS/JS/SVG) are at the root level; images
+          # live in aac-images/ which matches the ./aac-images/ paths used
+          # throughout the app and service worker.
           path: '.'
 
       - name: Deploy to GitHub Pages

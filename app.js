@@ -200,7 +200,7 @@ const Speech = (() => {
 
 /* ============================================================
    PICTOGRAM MODULE
-   All pictograms are bundled as SVG files in public/aac-images/
+   All pictograms are bundled as SVG files in aac-images/
    so the app works fully offline without any network requests.
    Higher-quality ARASAAC PNGs can be downloaded with
    `npm run fetch-images` and will take precedence automatically

@@ -3,7 +3,7 @@
  * fetch-aac-images.js
  *
  * Optional script: downloads higher-quality ARASAAC pictograms for the full
- * core vocabulary pack and saves them to public/aac-images/{word}.png.
+ * core vocabulary pack and saves them to aac-images/{word}.png.
  *
  * The app ships bundled SVG pictograms and works fully offline without running
  * this script. Run it to upgrade to official ARASAAC artwork (requires
@@ -177,7 +177,7 @@ const WORDS = {
 
 const SEARCH_BASE  = 'https://api.arasaac.org/api/pictograms/en/search/';
 const IMG_BASE     = 'https://static.arasaac.org/pictograms/';
-const OUT_DIR      = path.join(__dirname, 'public', 'aac-images');
+const OUT_DIR      = path.join(__dirname, 'aac-images');
 const RATE_DELAY   = 500; // ms between requests — respects ARASAAC rate limits
 
 /* Ensure output directory exists */
