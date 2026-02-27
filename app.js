@@ -16,6 +16,8 @@ const CONFIG = Object.freeze({
   BANK_ITEMS: ['Rocks', 'Ball', 'Walk', 'Coloring', 'Book', 'Math', 'Writing'],
   CORE_VOCAB: ['Yes', 'No'],
   TURN_VOCAB: ['my-turn', 'your-turn'],
+  LS_VOCAB_KEY: 'activeVocabulary',
+  LS_VOICE_KEY: 'selectedVoiceURI',
 });
 
 /* ============================================================
@@ -155,6 +157,14 @@ const Speech = (() => {
     utt.rate = 0.9;
     utt.pitch = 1.0;
     utt.volume = 1.0;
+    /* Apply teacher-selected voice when one has been saved */
+    try {
+      const uri = localStorage.getItem(CONFIG.LS_VOICE_KEY);
+      if (uri) {
+        const voice = window.speechSynthesis.getVoices().find(v => v.voiceURI === uri);
+        if (voice) utt.voice = voice;
+      }
+    } catch (_) {}
     window.speechSynthesis.speak(utt);
   }
 
@@ -388,10 +398,10 @@ const ChoiceBoard = (() => {
     window.CommDB?.logEvent('clear_board', { words: [], view: 'choice-board' });
   }
 
-  function init() {
+  function _buildBank(words) {
     const bank = document.getElementById('choice-bank');
-
-    CONFIG.BANK_ITEMS.forEach((word) => {
+    bank.innerHTML = '';
+    words.forEach((word) => {
       const div = document.createElement('div');
       div.className = 'bank-item';
       div.setAttribute('role', 'button');
@@ -412,6 +422,18 @@ const ChoiceBoard = (() => {
       Pictogram.load(img, word.toLowerCase());
       div.addEventListener('click', () => _handleBankClick(word));
     });
+  }
+
+  function init() {
+    /* Load active vocabulary from localStorage; fall back to CONFIG.BANK_ITEMS */
+    let active;
+    try {
+      const stored = localStorage.getItem(CONFIG.LS_VOCAB_KEY);
+      active = stored ? JSON.parse(stored) : CONFIG.BANK_ITEMS.map(w => w.toLowerCase());
+    } catch (_) {
+      active = CONFIG.BANK_ITEMS.map(w => w.toLowerCase());
+    }
+    _buildBank(active);
 
     /* Filled slot tap → speak that item */
     document.getElementById('slot-1').addEventListener('click', () => {
@@ -430,7 +452,13 @@ const ChoiceBoard = (() => {
     document.getElementById('btn-clear').addEventListener('click', _clearAll);
   }
 
-  return { init };
+  /** Called by Settings after the teacher saves a new active vocabulary */
+  function rebuild(words) {
+    [0, 1].forEach(i => { _slots[i] = null; _clearSlot(i); });
+    _buildBank(words);
+  }
+
+  return { init, rebuild };
 })();
 
 /* ============================================================
@@ -480,6 +508,208 @@ const Orientation = (() => {
 })();
 
 /* ============================================================
+   SETTINGS MODULE
+   Hidden gear button (3-second long-press) opens a full-screen
+   modal where the teacher can:
+     • select the active Choice Bank vocabulary
+     • choose the TTS voice
+   Selections are persisted in localStorage.
+   ============================================================ */
+const Settings = (() => {
+  /* Full vocabulary fallback — used when vocabulary.json is unavailable.
+   * Mirrors the WORDS map in fetch-aac-images.js. */
+  const _VOCAB_FALLBACK = [
+    // Pronouns
+    'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'my', 'your', 'that',
+    // Verbs
+    'go', 'stop', 'want', 'help', 'play', 'eat', 'drink', 'see', 'come', 'like',
+    'need', 'get', 'make', 'do', 'have', 'look', 'feel', 'put', 'sit', 'stand',
+    'open', 'close', 'give', 'take', 'push', 'pull', 'throw', 'jump', 'walk', 'read',
+    // Prepositions
+    'in', 'on', 'up', 'down', 'out', 'off', 'here', 'there', 'with', 'away',
+    // Adjectives
+    'good', 'bad', 'big', 'little', 'hot', 'cold', 'fast', 'slow', 'dirty', 'clean',
+    'loud', 'quiet', 'different', 'same', 'favorite', 'broken',
+    // Descriptors
+    'more', 'done', 'finished', 'again', 'mine',
+    // Questions
+    'what', 'where', 'when', 'why', 'who', 'how',
+    // Common Nouns
+    'bathroom', 'water', 'food', 'home', 'school', 'car', 'bed', 'book', 'ball',
+    'music', 'outside', 'inside', 'chair', 'table',
+    // Social / Pragmatic
+    'yes', 'no', 'please', 'wait', 'sorry', 'no-thank-you', 'all-done',
+    'i-dont-know', 'good-job',
+    // Colors
+    'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink',
+    // Emotions
+    'happy', 'sad', 'mad', 'tired', 'hungry', 'thirsty', 'sick', 'hurt',
+    // Turn Taking
+    'my-turn', 'your-turn',
+    // App Vocabulary
+    'rocks', 'coloring', 'math', 'writing',
+  ];
+
+  let _allWords = [];
+  let _longPressTimer = null;
+  const _LONG_PRESS_MS = 3000;
+
+  /* ── Vocabulary helpers ── */
+  function getActiveVocab() {
+    try {
+      const stored = localStorage.getItem(CONFIG.LS_VOCAB_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return CONFIG.BANK_ITEMS.map(w => w.toLowerCase());
+  }
+
+  /* ── Load vocabulary.json; fall back to built-in list ── */
+  async function _loadVocabList() {
+    try {
+      const res = await fetch('./aac-images/vocabulary.json');
+      if (res.ok) {
+        const words = await res.json();
+        if (Array.isArray(words) && words.length > 0) return words;
+      }
+    } catch (_) {}
+    return _VOCAB_FALLBACK;
+  }
+
+  /* ── Modal open / close ── */
+  function _open() {
+    _loadVocabList().then((words) => {
+      _allWords = words;
+      _renderVoices();
+      document.getElementById('settings-search').value = '';
+      _renderWordGrid(words, '');
+      document.getElementById('settings-modal').classList.add('open');
+    });
+  }
+
+  function _close() {
+    document.getElementById('settings-modal').classList.remove('open');
+  }
+
+  /* ── Voice selector ── */
+  function _renderVoices() {
+    const sel    = document.getElementById('voice-select');
+    const voices = window.speechSynthesis?.getVoices() ?? [];
+    const saved  = localStorage.getItem(CONFIG.LS_VOICE_KEY) || '';
+    sel.innerHTML = '';
+
+    const def = document.createElement('option');
+    def.value = '';
+    def.textContent = 'Default voice';
+    sel.appendChild(def);
+
+    voices.forEach((v) => {
+      const opt = document.createElement('option');
+      opt.value = v.voiceURI;
+      opt.textContent = `${v.name} (${v.lang})`;
+      if (v.voiceURI === saved) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  /* ── Word grid ── */
+  function _renderWordGrid(words, query) {
+    const grid   = document.getElementById('settings-word-grid');
+    const active = new Set(getActiveVocab());
+    grid.innerHTML = '';
+
+    const filtered = query
+      ? words.filter(w => w.includes(query.toLowerCase()))
+      : words;
+
+    filtered.forEach((word) => {
+      const isOn = active.has(word);
+
+      const lbl = document.createElement('label');
+      lbl.className = 'settings-word-item' + (isOn ? ' active' : '');
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'settings-word-check';
+      chk.dataset.word = word;
+      chk.checked = isOn;
+      chk.addEventListener('change', () => lbl.classList.toggle('active', chk.checked));
+
+      const img = document.createElement('img');
+      img.className = 'settings-word-img';
+      img.src = `./aac-images/${word}.svg`;
+      img.alt = word;
+      img.onerror = () => { img.onerror = null; img.style.display = 'none'; };
+
+      const span = document.createElement('span');
+      span.className = 'settings-word-label';
+      span.textContent = word;
+
+      lbl.append(chk, img, span);
+      grid.appendChild(lbl);
+    });
+  }
+
+  /* ── Save ── */
+  function _save() {
+    const selected = Array.from(
+      document.querySelectorAll('.settings-word-check:checked'),
+      c => c.dataset.word,
+    );
+    try { localStorage.setItem(CONFIG.LS_VOCAB_KEY, JSON.stringify(selected)); } catch (_) {}
+    ChoiceBoard.rebuild(selected);
+    DB.log('settings_saved', { activeVocabulary: selected });
+    _close();
+  }
+
+  /* ── Long-press detection (3 s) on the gear button ── */
+  function _initLongPress() {
+    const btn = document.getElementById('settings-btn');
+
+    function _start() {
+      _longPressTimer = setTimeout(() => {
+        _longPressTimer = null;
+        _open();
+      }, _LONG_PRESS_MS);
+    }
+
+    function _cancel() {
+      if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+    }
+
+    btn.addEventListener('pointerdown', _start);
+    btn.addEventListener('pointerup',   _cancel);
+    btn.addEventListener('pointerleave', _cancel);
+    btn.addEventListener('pointercancel', _cancel);
+    /* Suppress the native context menu that appears on long-press (mobile) */
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  function init() {
+    _initLongPress();
+
+    document.getElementById('settings-modal-close')
+      .addEventListener('click', _close);
+    document.getElementById('settings-save')
+      .addEventListener('click', _save);
+    document.getElementById('settings-search')
+      .addEventListener('input', (e) => _renderWordGrid(_allWords, e.target.value.trim()));
+    document.getElementById('voice-select')
+      .addEventListener('change', (e) => {
+        try { localStorage.setItem(CONFIG.LS_VOICE_KEY, e.target.value); } catch (_) {}
+      });
+
+    /* Voices may load asynchronously on some browsers */
+    window.speechSynthesis?.addEventListener('voiceschanged', () => {
+      if (document.getElementById('settings-modal').classList.contains('open')) {
+        _renderVoices();
+      }
+    });
+  }
+
+  return { init, getActiveVocab };
+})();
+
+/* ============================================================
    SERVICE WORKER REGISTRATION
    ============================================================ */
 function registerSW() {
@@ -519,6 +749,7 @@ async function init() {
   TurnTaking.init();
   DevTools.init();
   Orientation.init();
+  Settings.init();
 
   DB.log('session_start', {
     sessionId: SESSION_ID,

@@ -64,6 +64,12 @@
             title="Enable Partner Mode">
       🔒
     </button>
+    <!-- Subtle gear — hold 3 seconds to open Settings -->
+    <button id="settings-btn"
+            aria-label="Open settings (hold 3 seconds)"
+            title="Hold 3 seconds to open settings">
+      ⚙
+    </button>
   </nav>
 
   <!-- ======================================================
@@ -199,5 +205,45 @@
 
 <script src="db.js"></script>
 <script src="app.js"></script>
+
+<!-- ========================================================
+     Settings Modal
+     Opened via 3-second long-press on the gear button.
+     Teacher-only: configure active vocabulary & TTS voice.
+     ======================================================== -->
+<div id="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="settings-panel">
+
+    <!-- Header -->
+    <div class="settings-header">
+      <h2 class="settings-title">⚙ Settings</h2>
+      <button id="settings-modal-close" class="settings-close-btn" aria-label="Close settings">✕</button>
+    </div>
+
+    <!-- Voice selector -->
+    <div class="settings-section">
+      <label class="settings-label" for="voice-select">Voice</label>
+      <select id="voice-select" class="settings-voice-select"></select>
+    </div>
+
+    <!-- Vocabulary picker -->
+    <div class="settings-section settings-vocab-section">
+      <div class="settings-vocab-header">
+        <span class="settings-label">Choice Bank Words</span>
+        <input id="settings-search" type="search" class="settings-search"
+               placeholder="Search words…" autocomplete="off" autocorrect="off" />
+      </div>
+      <div id="settings-word-grid" class="settings-word-grid" role="list"
+           aria-label="Available vocabulary words"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="settings-footer">
+      <button id="settings-save" class="settings-save-btn">Save &amp; Close</button>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
