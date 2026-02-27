@@ -53,12 +53,10 @@
             id="nav-choice-board">
       Choice Board
     </button>
-    <button id="dev-tools-toggle"
-            class="dev-toggle-btn"
-            aria-label="Toggle developer tools panel"
-            aria-controls="dev-tools-panel"
-            aria-expanded="false">
-      ⚙ Dev
+    <button class="nav-btn"
+            data-view="dev-preview"
+            id="nav-dev-preview">
+      ⚙ Dev Preview
     </button>
   </nav>
 
@@ -126,33 +124,50 @@
 
   </section>
 
+  <!-- ======================================================
+       View 3 — Dev Preview
+       Full-screen developer dashboard: app status + event log
+       ====================================================== -->
+  <section id="view-dev-preview"
+           class="view"
+           aria-label="Developer Preview">
+
+    <!-- Status bar -->
+    <div id="dev-status-bar">
+      <span class="dev-status-item">
+        <span class="dev-status-label">Version</span>
+        <span id="dev-status-version" class="dev-status-value">1.0.0</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">Session</span>
+        <span id="dev-status-session" class="dev-status-value">—</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">SW</span>
+        <span id="dev-status-sw" class="dev-status-value dev-status-pending">checking…</span>
+      </span>
+      <span class="dev-status-item">
+        <span class="dev-status-label">DB</span>
+        <span id="dev-status-db" class="dev-status-value dev-status-pending">opening…</span>
+      </span>
+    </div>
+
+    <!-- Full-height event log -->
+    <div id="dev-preview-log" role="log" aria-live="polite" aria-label="IndexedDB event log">
+      <div id="dev-preview-entries"></div>
+    </div>
+
+    <!-- Action footer -->
+    <div id="dev-preview-footer">
+      <button id="dev-preview-clear" aria-label="Clear event log display">Clear Display</button>
+      <button id="dev-preview-refresh" aria-label="Refresh event log from database">↺ Refresh</button>
+      <span id="dev-preview-count">0 events logged</span>
+      <button id="dev-preview-export" aria-label="Export all data as JSON">⬇ Export JSON</button>
+    </div>
+
+  </section>
+
 </div><!-- /#app -->
-
-<!-- ========================================================
-     Dev Tools Panel
-     Real-time IndexedDB event log (proves data capture for
-     future Anderson-OS integration).
-     Hidden by default; toggle with the ⚙ Dev button.
-     ======================================================== -->
-<aside id="dev-tools-panel"
-       class="hidden"
-       aria-label="Developer tools — IndexedDB event log">
-
-  <div id="dev-tools-header">
-    <span>📊 IndexedDB Event Log</span>
-    <button id="dev-tools-close" aria-label="Close developer tools">✕</button>
-  </div>
-
-  <div id="dev-log-container" role="log" aria-live="polite">
-    <div id="dev-log-entries"></div>
-  </div>
-
-  <div id="dev-tools-footer">
-    <button id="dev-clear-log">Clear Display</button>
-    <span id="dev-event-count">0 events logged</span>
-  </div>
-
-</aside>
 
 <script src="db.js"></script>
 <script src="app.js"></script>

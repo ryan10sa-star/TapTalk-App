@@ -150,29 +150,44 @@ const Pictogram = (() => {
 
 /* ============================================================
    DEV TOOLS MODULE
-   Real-time IndexedDB event log panel.
-   Proves data capture for the future Anderson-OS integration.
+   Full-screen developer preview panel (View 3).
    ============================================================ */
 const DevTools = (() => {
-  const _panel = () => document.getElementById('dev-tools-panel');
-  const _entries = () => document.getElementById('dev-log-entries');
-  const _counter = () => document.getElementById('dev-event-count');
+  const _entries  = () => document.getElementById('dev-preview-entries');
+  const _counter  = () => document.getElementById('dev-preview-count');
   let _count = 0;
 
   function init() {
-    document.getElementById('dev-tools-toggle').addEventListener('click', () => {
-      _panel().classList.toggle('hidden');
-      if (!_panel().classList.contains('hidden')) _loadAll();
-    });
+    /* Populate static status fields */
+    document.getElementById('dev-status-session').textContent =
+      SESSION_ID.slice(0, 13) + '…';
+    document.getElementById('dev-status-version').textContent =
+      window.TapTalk?.version ?? '1.0.0';
 
-    document.getElementById('dev-tools-close').addEventListener('click', () => {
-      _panel().classList.add('hidden');
-    });
-
-    document.getElementById('dev-clear-log').addEventListener('click', () => {
+    document.getElementById('dev-preview-clear').addEventListener('click', () => {
       _entries().innerHTML = '';
       _count = 0;
       _updateCounter();
+    });
+
+    document.getElementById('dev-preview-refresh').addEventListener('click', _loadAll);
+
+    document.getElementById('dev-preview-export').addEventListener('click', async () => {
+      try {
+        const json = await window.exportTapTalkData?.();
+        if (!json) { console.warn('[TapTalk] Export returned no data'); return; }
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `taptalk-export-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('[TapTalk] Export failed:', err);
+      }
     });
   }
 
@@ -183,7 +198,7 @@ const DevTools = (() => {
   function _renderEntry(entry) {
     const div = document.createElement('div');
     div.className = 'dev-log-entry';
-    const time = new Date(entry.timestamp).toLocaleTimeString();
+    const time  = new Date(entry.timestamp).toLocaleTimeString();
     const idStr = entry.id != null ? `[${entry.id}] ` : '';
     div.innerHTML =
       `<span class="log-time">${time}</span>` +
@@ -196,7 +211,6 @@ const DevTools = (() => {
   function append(entry) {
     _count++;
     _updateCounter();
-    if (_panel().classList.contains('hidden')) return;
     _entries().prepend(_renderEntry(entry));
   }
 
@@ -212,7 +226,21 @@ const DevTools = (() => {
     }
   }
 
-  return { init, append };
+  /** Update the DB status badge once the database is open */
+  function setDbStatus(ok) {
+    const el = document.getElementById('dev-status-db');
+    el.textContent = ok ? 'open ✓' : 'error ✗';
+    el.className = 'dev-status-value ' + (ok ? 'dev-status-ok' : 'dev-status-err');
+  }
+
+  /** Update the SW status badge */
+  function setSwStatus(text, ok) {
+    const el = document.getElementById('dev-status-sw');
+    el.textContent = text;
+    el.className = 'dev-status-value ' + (ok ? 'dev-status-ok' : 'dev-status-err');
+  }
+
+  return { init, append, setDbStatus, setSwStatus };
 })();
 
 /* ============================================================
@@ -390,8 +418,16 @@ function registerSW() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('./sw.js')
-      .then((reg) => console.log('[TapTalk] SW registered:', reg.scope))
-      .catch((err) => console.warn('[TapTalk] SW registration failed:', err));
+      .then((reg) => {
+        console.log('[TapTalk] SW registered:', reg.scope);
+        DevTools.setSwStatus('active ✓', true);
+      })
+      .catch((err) => {
+        console.warn('[TapTalk] SW registration failed:', err);
+        DevTools.setSwStatus('failed ✗', false);
+      });
+  } else {
+    DevTools.setSwStatus('unsupported', false);
   }
 }
 
@@ -401,7 +437,12 @@ function registerSW() {
 async function init() {
   registerSW();
 
-  await DB.open();
+  try {
+    await DB.open();
+    DevTools.setDbStatus(true);
+  } catch (err) {
+    DevTools.setDbStatus(false);
+  }
 
   Views.init();
   CoreVocab.init();
