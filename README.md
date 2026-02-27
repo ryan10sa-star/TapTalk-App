@@ -1,49 +1,44 @@
 # TapTalk-App
 A mostly offline PWA to help with non verbal communications and learning
 
-## 🔗 View the dev preview — no setup required
-
-Open this URL in your browser right now (no account, no publishing needed):
-
-**https://raw.githack.com/ryan10sa-star/TapTalk-App/copilot/build-offline-first-pwa/index.html**
-
-> **Note:** this URL points to the current `copilot/build-offline-first-pwa` branch.
-> After merging to `main`, use `…/main/index.html` instead.
-
-> raw.githack.com serves the files directly from this GitHub branch with the correct
-> content-types. Core features (AAC boards, IndexedDB storage, offline mode) all work.
-> The service worker is disabled on this CDN origin, so the "install as app" banner won't
-> appear — use the GitHub Pages URL below if you need that.
-
 ---
 
-### 🚀 Permanent GitHub Pages URL (one-time setup)
+## ✅ One step to go live
 
-**Step 1 — Set the Pages source (do this once):**
+**Merge this Pull Request.**
 
-1. In your repo go to **Settings → Pages → Build and deployment**
-2. Set **Source** → **Deploy from a branch**
-3. **Branch** dropdown → select **`copilot/build-offline-first-pwa`**, folder **`/ (root)`**
-4. Click **Save**
-
-> ℹ️ If the Save button is greyed out, the branch is already selected — GitHub Pages will
-> build automatically within ~1 minute.  Refresh the page and a green banner with your
-> live URL will appear at the top of the Pages settings screen.
-
-**Step 2 — your live URL:**
+That's it. Merging puts all the app files (`index.html`, `styles.css`, `app.js`, images, etc.)
+onto the `main` branch. GitHub Pages is already configured to serve from `main / (root)`, so
+within about 1 minute of merging the app will be live at:
 
 **https://ryan10sa-star.github.io/TapTalk-App/**
 
----
-
-#### After merging this PR to `main`
-
-Once the PR is merged, repeat Step 1 and change the branch from
-`copilot/build-offline-first-pwa` to **`main`** so future updates deploy automatically.
+You don't need to change any GitHub settings. You don't need to approve any workflow.
+Just click the green **Merge pull request** button on this PR.
 
 ---
 
-### 💻 Run locally
+## Why it shows blank / just text right now
+
+`main` currently only has a `README.md` file — all the app code lives on this PR branch.
+GitHub Pages is serving from `main`, so it displays the README as plain text.
+Merging this PR fixes that instantly.
+
+---
+
+## 🔗 Preview the app right now (no merge needed)
+
+You can also try the app immediately at:
+
+**https://raw.githack.com/ryan10sa-star/TapTalk-App/copilot/build-offline-first-pwa/index.html**
+
+> Core features (AAC boards, choice board, offline storage) all work here.
+> The "install as app" banner won't appear on this preview URL — use the GitHub Pages
+> URL above (after merging) if you need that.
+
+---
+
+## 💻 Run locally
 
 ```bash
 npm install
