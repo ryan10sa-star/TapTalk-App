@@ -175,6 +175,18 @@
   }
 }
 
+@keyframes tile-spring {
+  0%   { transform: scale(1); }
+  18%  { transform: scale(0.90); }
+  55%  { transform: scale(1.07); }
+  80%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.tile-spring-tap {
+  animation: tile-spring 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.

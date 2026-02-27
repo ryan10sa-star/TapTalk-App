@@ -8,24 +8,27 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
-  { id: "all", label: "All Words", color: "#475569", icon: "⊞" },
-  { id: "core", label: "Core", color: "#2563EB", icon: "★" },
-  { id: "social", label: "Social", color: "#E11D48", icon: "◎" },
-  { id: "actions", label: "Actions", color: "#EA580C", icon: "▶" },
-  { id: "feelings", label: "Feelings", color: "#7C3AED", icon: "♥" },
-  { id: "food", label: "Food", color: "#059669", icon: "◉" },
-  { id: "lake-county", label: "Lake County", color: "#92400E", icon: "◈" },
-  { id: "school", label: "School", color: "#6D28D9", icon: "✏" },
-  { id: "people", label: "People", color: "#DB2777", icon: "◎" },
-  { id: "places", label: "Places", color: "#0891B2", icon: "◆" },
-  { id: "things", label: "Things", color: "#CA8A04", icon: "◇" },
-  { id: "descriptors", label: "Descriptors", color: "#6366F1", icon: "◐" },
-  { id: "numbers", label: "Numbers", color: "#0F766E", icon: "#" },
-  { id: "animals", label: "Animals", color: "#65A30D", icon: "◕" },
-  { id: "routines", label: "Routines", color: "#7C3AED", icon: "◷" },
-  { id: "activities", label: "Activities", color: "#0284C7", icon: "◉" },
-  { id: "nature", label: "Nature", color: "#059669", icon: "◈" },
+  { id: "all",          label: "All Words",   color: "#475569", icon: "⊞" },
+  { id: "recents",      label: "Recents",     color: "#D97706", icon: "⏱" },
+  { id: "core",         label: "Core",        color: "#2563EB", icon: "★" },
+  { id: "social",       label: "Social",      color: "#E11D48", icon: "◎" },
+  { id: "actions",      label: "Actions",     color: "#EA580C", icon: "▶" },
+  { id: "feelings",     label: "Feelings",    color: "#7C3AED", icon: "♥" },
+  { id: "food",         label: "Food",        color: "#059669", icon: "◉" },
+  { id: "lake-county",  label: "Lake County", color: "#92400E", icon: "◈" },
+  { id: "school",       label: "School",      color: "#6D28D9", icon: "✏" },
+  { id: "people",       label: "People",      color: "#DB2777", icon: "◎" },
+  { id: "places",       label: "Places",      color: "#0891B2", icon: "◆" },
+  { id: "things",       label: "Things",      color: "#CA8A04", icon: "◇" },
+  { id: "descriptors",  label: "Descriptors", color: "#6366F1", icon: "◐" },
+  { id: "numbers",      label: "Numbers",     color: "#0F766E", icon: "#" },
+  { id: "animals",      label: "Animals",     color: "#65A30D", icon: "◕" },
+  { id: "routines",     label: "Routines",    color: "#7C3AED", icon: "◷" },
+  { id: "activities",   label: "Activities",  color: "#0284C7", icon: "◉" },
+  { id: "nature",       label: "Nature",      color: "#059669", icon: "◈" },
 ];
+
+export const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));
 
 interface CategoryNavProps {
   selected: string;
@@ -41,8 +44,10 @@ export function CategoryNav({ selected, onSelect, wordCounts }: CategoryNavProps
           {CATEGORIES.map((cat) => {
             const isActive = selected === cat.id;
             const count = cat.id === "all"
-              ? Object.values(wordCounts).reduce((a, b) => a + b, 0)
+              ? Object.entries(wordCounts).filter(([k]) => k !== "recents").reduce((a, [, b]) => a + b, 0)
               : (wordCounts[cat.id] ?? 0);
+
+            if (cat.id === "recents" && count === 0) return null;
 
             return (
               <button

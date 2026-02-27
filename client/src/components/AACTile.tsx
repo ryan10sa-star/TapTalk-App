@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { ImageOff } from "lucide-react";
 
 interface AACTileProps {
@@ -9,36 +9,23 @@ interface AACTileProps {
   size?: "normal" | "large";
 }
 
-const categoryIconMap: Record<string, string> = {
-  core: "⬡",
-  actions: "▶",
-  feelings: "♥",
-  food: "◉",
-  "lake-county": "◈",
-  people: "◎",
-  places: "◆",
-  things: "◇",
-  descriptors: "◐",
-  numbers: "#",
-  social: "◑",
-  animals: "◕",
-  routines: "◷",
-  activities: "◉",
-  nature: "◈",
-};
-
 export function AACTile({ word, category, color, onTap, size = "normal" }: AACTileProps) {
-  const [pressed, setPressed] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const animTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fileName = word.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "");
   const imgSrc = `/aac-images/${fileName}.png`;
 
   const handleTap = useCallback(() => {
-    setPressed(true);
+    if (animTimer.current) clearTimeout(animTimer.current);
+    setAnimating(false);
+    requestAnimationFrame(() => {
+      setAnimating(true);
+      animTimer.current = setTimeout(() => setAnimating(false), 340);
+    });
     onTap(word, category);
-    setTimeout(() => setPressed(false), 200);
   }, [word, category, onTap]);
 
   const lightenColor = (hex: string, amount: number): string => {
@@ -56,19 +43,15 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
     <button
       data-testid={`tile-${fileName}`}
       onClick={handleTap}
-      className="aac-tile group relative flex flex-col items-center justify-between w-full select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-xl"
+      className={`aac-tile group relative flex flex-col items-center justify-between w-full select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-xl${animating ? " tile-spring-tap" : ""}`}
       style={{
         backgroundColor: bgColor,
         borderColor: borderColor,
         border: "2px solid",
-        transform: pressed ? "scale(0.94)" : "scale(1)",
-        transition: "transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease",
-        boxShadow: pressed
-          ? `0 1px 4px ${color}33`
-          : `0 2px 8px ${color}22, 0 0 0 0 ${color}00`,
+        boxShadow: `0 2px 8px ${color}22`,
         aspectRatio: "1 / 1",
-        minHeight: size === "large" ? "120px" : "80px",
-        padding: "8px 6px 6px",
+        minHeight: size === "large" ? "clamp(80px, 14vw, 140px)" : "clamp(64px, 10vw, 110px)",
+        padding: "clamp(4px, 1vw, 10px) clamp(4px, 0.8vw, 8px) clamp(4px, 0.8vw, 8px)",
       }}
       aria-label={word}
     >
@@ -107,7 +90,9 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
         className="w-full mt-1 text-center font-semibold leading-tight"
         style={{
           color: color,
-          fontSize: size === "large" ? "clamp(0.65rem, 1.5vw, 0.9rem)" : "clamp(0.55rem, 1.2vw, 0.78rem)",
+          fontSize: size === "large"
+            ? "clamp(0.6rem, 1.4vw, 0.88rem)"
+            : "clamp(0.5rem, 1.1vw, 0.75rem)",
           lineHeight: 1.2,
           wordBreak: "break-word",
           hyphens: "auto",
@@ -117,8 +102,8 @@ export function AACTile({ word, category, color, onTap, size = "normal" }: AACTi
       </div>
 
       <div
-        className="absolute inset-0 rounded-xl opacity-0 group-active:opacity-100 transition-opacity duration-75 pointer-events-none"
-        style={{ backgroundColor: color, opacity: pressed ? 0.08 : 0 }}
+        className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-75"
+        style={{ backgroundColor: color, opacity: animating ? 0.07 : 0 }}
       />
     </button>
   );

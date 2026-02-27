@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { AACTile } from "@/components/AACTile";
 import { SentenceStrip } from "@/components/SentenceStrip";
-import { CategoryNav } from "@/components/CategoryNav";
+import { CategoryNav, CATEGORY_MAP } from "@/components/CategoryNav";
 import { PartnerModeLock } from "@/components/PartnerModeLock";
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { speakWord, preloadAudio } from "@/lib/audio";
@@ -18,6 +18,14 @@ interface VocabWord {
   color: string;
 }
 
+function loadTapCounts(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem("taptalk-tap-counts") || "{}");
+  } catch {
+    return {};
+  }
+}
+
 export default function Home() {
   const [vocabulary, setVocabulary] = useState<VocabWord[]>([]);
   const [sentenceWords, setSentenceWords] = useState<string[]>([]);
@@ -25,9 +33,11 @@ export default function Home() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [tapCounts, setTapCounts] = useState<Record<string, number>>(loadTapCounts);
   const searchRef = useRef<HTMLInputElement>(null);
   const { locked, setLocked } = usePartner();
   const { settings, isWordVisible } = useSettings();
+
 
   useEffect(() => {
     fetch("/vocabulary.json")
@@ -49,29 +59,66 @@ export default function Home() {
     if (showSearch && searchRef.current) searchRef.current.focus();
   }, [showSearch]);
 
-  const wordCounts = useMemo(() =>
-    vocabulary.reduce<Record<string, number>>((acc, w) => {
+  const recentsWords = useMemo(() => {
+    return Object.entries(tapCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([word]) => word);
+  }, [tapCounts]);
+
+  const wordCounts = useMemo(() => {
+    const counts = vocabulary.reduce<Record<string, number>>((acc, w) => {
       acc[w.category] = (acc[w.category] ?? 0) + 1;
       return acc;
-    }, {}),
-    [vocabulary]
-  );
+    }, {});
+    const recentsVisible = recentsWords.filter((w) =>
+      vocabulary.some((v) => v.word === w && isWordVisible(v.word))
+    );
+    counts.recents = recentsVisible.length;
+    return counts;
+  }, [vocabulary, recentsWords, isWordVisible, settings.maskedWords]);
 
   const displayedWords = useMemo(() => {
     let words = vocabulary.filter((w) => isWordVisible(w.word));
-    if (selectedCategory !== "all") words = words.filter((w) => w.category === selectedCategory);
+
+    if (selectedCategory === "recents") {
+      const recentsSet = new Set(recentsWords);
+      words = words
+        .filter((w) => recentsSet.has(w.word))
+        .sort((a, b) => (tapCounts[b.word] ?? 0) - (tapCounts[a.word] ?? 0))
+        .slice(0, 10);
+    } else if (selectedCategory !== "all") {
+      words = words.filter((w) => w.category === selectedCategory);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       words = words.filter((w) => w.word.toLowerCase().includes(q));
     }
+
     return words;
-  }, [vocabulary, selectedCategory, searchQuery, isWordVisible, settings.maskedWords]);
+  }, [vocabulary, selectedCategory, searchQuery, isWordVisible, settings.maskedWords, recentsWords, tapCounts]);
+
+  const groupedWords = useMemo<[string, VocabWord[]][] | null>(() => {
+    if (selectedCategory !== "all" || searchQuery.trim()) return null;
+    const groups = new Map<string, VocabWord[]>();
+    for (const word of displayedWords) {
+      if (!groups.has(word.category)) groups.set(word.category, []);
+      groups.get(word.category)!.push(word);
+    }
+    return Array.from(groups.entries());
+  }, [displayedWords, selectedCategory, searchQuery]);
 
   const handleTap = useCallback((word: string, category: string) => {
-    hapticTap(settings.hapticEnabled, 35);
+    hapticTap(settings.hapticEnabled, 10);
     speakWord(word);
     logTap(word, category);
     setSentenceWords((prev) => [...prev, word]);
+    setTapCounts((prev) => {
+      const next = { ...prev, [word]: (prev[word] ?? 0) + 1 };
+      try { localStorage.setItem("taptalk-tap-counts", JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, [settings.hapticEnabled]);
 
   const handleSpeakSentence = useCallback(() => {
@@ -182,6 +229,47 @@ export default function Home() {
               <p className="text-muted-foreground font-medium">No words found</p>
             </div>
           </div>
+        ) : groupedWords ? (
+          <div className="flex flex-col gap-0">
+            {groupedWords.map(([catId, words]) => {
+              const cat = CATEGORY_MAP[catId];
+              return (
+                <div key={catId}>
+                  <div
+                    className="sticky top-0 z-10 flex items-center gap-2 py-1.5 px-1 mb-1.5"
+                    style={{
+                      backgroundColor: "rgba(248,250,252,0.95)",
+                      backdropFilter: "blur(6px)",
+                      borderBottom: `2px solid ${cat?.color ?? "#94A3B8"}33`,
+                    }}
+                    data-testid={`section-header-${catId}`}
+                  >
+                    <span className="text-xs leading-none" style={{ color: cat?.color }}>{cat?.icon}</span>
+                    <span
+                      className="text-xs font-bold uppercase tracking-wide"
+                      style={{ color: cat?.color ?? "#475569" }}
+                    >
+                      {cat?.label ?? catId}
+                    </span>
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                      style={{
+                        backgroundColor: (cat?.color ?? "#475569") + "18",
+                        color: cat?.color ?? "#475569",
+                      }}
+                    >
+                      {words.length}
+                    </span>
+                  </div>
+                  <div className={`grid gap-2 sm:gap-2.5 mb-4 ${gridCols}`} style={{ alignContent: "start" }}>
+                    {words.map((vocab) => (
+                      <AACTile key={vocab.id} word={vocab.word} category={vocab.category} color={vocab.color} onTap={handleTap} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className={`grid gap-2 sm:gap-2.5 ${gridCols}`} style={{ alignContent: "start" }}>
             {displayedWords.map((vocab) => (
@@ -190,12 +278,6 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      <div className="shrink-0 px-3 py-1 border-t flex items-center justify-center" style={{ borderColor: "#E2E8F0" }}>
-        <a href="https://arasaac.org" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground" data-testid="link-attribution" tabIndex={-1}>
-          Pictograms by ARASAAC © Gobierno de Aragón, Spain · CC BY-NC-SA 4.0
-        </a>
-      </div>
 
       {showAnalytics && <AnalyticsPanel onClose={() => setShowAnalytics(false)} />}
     </div>

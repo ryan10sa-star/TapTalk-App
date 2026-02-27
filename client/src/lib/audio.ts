@@ -4,6 +4,7 @@ const preloadQueue = new Set<string>();
 
 let _highEnergyEnabled = true;
 let _activeVoiceSlug = "sarah";
+let _currentAudio: HTMLAudioElement | null = null;
 
 export function setAudioHighEnergy(enabled: boolean) {
   _highEnergyEnabled = enabled;
@@ -13,6 +14,52 @@ export function setActiveVoiceSlug(slug: string) {
   if (_activeVoiceSlug !== slug) {
     _activeVoiceSlug = slug;
     audioCache.clear();
+  }
+}
+
+function fadeIn(audio: HTMLAudioElement, targetVol = 1.0, durationMs = 5): void {
+  audio.volume = 0;
+  const STEPS = 8;
+  const stepMs = durationMs / STEPS;
+  let step = 0;
+  const tick = () => {
+    step++;
+    audio.volume = Math.min(targetVol, (step / STEPS) * targetVol);
+    if (step < STEPS) setTimeout(tick, stepMs);
+  };
+  setTimeout(tick, 1);
+}
+
+function fadeOut(audio: HTMLAudioElement, durationMs = 5, onDone?: () => void): void {
+  const startVol = audio.volume;
+  const STEPS = 8;
+  const stepMs = durationMs / STEPS;
+  let step = 0;
+  const tick = () => {
+    step++;
+    audio.volume = Math.max(0, startVol * (1 - step / STEPS));
+    if (step < STEPS) {
+      setTimeout(tick, stepMs);
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+      onDone?.();
+    }
+  };
+  setTimeout(tick, 1);
+}
+
+function playWithFade(audio: HTMLAudioElement): void {
+  if (_currentAudio && _currentAudio !== audio && !_currentAudio.paused) {
+    fadeOut(_currentAudio, 5, () => {
+      _currentAudio = audio;
+      fadeIn(audio);
+      audio.play().catch(() => {});
+    });
+  } else {
+    _currentAudio = audio;
+    fadeIn(audio);
+    audio.play().catch(() => {});
   }
 }
 
@@ -36,13 +83,13 @@ export function speakWord(word: string): void {
     if (audioCache.has(path)) {
       const audio = audioCache.get(path)!;
       audio.currentTime = 0;
-      audio.play().catch(() => tryPath(index + 1));
+      playWithFade(audio);
       return;
     }
     const audio = new Audio(path);
     audio.onerror = () => tryPath(index + 1);
     audio.oncanplaythrough = () => { audioCache.set(path, audio); };
-    audio.play().catch(() => tryPath(index + 1));
+    playWithFade(audio);
   };
 
   tryPath(0);
@@ -64,6 +111,7 @@ export function playSfx(name: SfxName, options?: { highEnergy?: boolean }): void
   if (sfxCache.has(path)) {
     const audio = sfxCache.get(path)!;
     audio.currentTime = 0;
+    fadeIn(audio, 1.0, 5);
     audio.play().catch(() => {});
     return;
   }
@@ -71,6 +119,7 @@ export function playSfx(name: SfxName, options?: { highEnergy?: boolean }): void
   const audio = new Audio(path);
   audio.oncanplaythrough = () => { sfxCache.set(path, audio); };
   audio.onerror = () => {};
+  fadeIn(audio, 1.0, 5);
   audio.play().catch(() => {});
 }
 
@@ -79,6 +128,7 @@ export function previewVoice(voiceSlug: string, word = "Hello"): void {
   const path = `/aac-audio/${voiceSlug}/${fileName}.mp3`;
   const audio = new Audio(path);
   audio.onerror = () => fallbackSpeak(word);
+  fadeIn(audio, 1.0, 5);
   audio.play().catch(() => fallbackSpeak(word));
 }
 
@@ -94,7 +144,8 @@ export function playCelebrationSound(): void {
       gain.connect(ctx.destination);
       osc.frequency.value = freq;
       osc.type = "sine";
-      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.13);
+      gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.13);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i * 0.13 + 0.005);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.13 + 0.3);
       osc.start(ctx.currentTime + i * 0.13);
       osc.stop(ctx.currentTime + i * 0.13 + 0.3);

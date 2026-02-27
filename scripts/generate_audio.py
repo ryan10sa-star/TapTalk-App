@@ -90,7 +90,7 @@ def generate_word(word: str, voice_slug: str, out_dir: Path, skip_existing: bool
         "voice_settings": get_voice_settings(word),
     }
 
-    url = f"{BASE_URL}/text-to-speech/{voice['id']}"
+    url = f"{BASE_URL}/text-to-speech/{voice['id']}?output_format=mp3_44100_128"
 
     for attempt in range(3):
         try:
