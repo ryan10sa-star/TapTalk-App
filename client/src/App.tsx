@@ -15,7 +15,8 @@ import { PartnerProvider } from "@/lib/partnerContext";
 import { SettingsProvider, useSettings } from "@/lib/settingsContext";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Settings as GearIcon } from "lucide-react";
-import { setAudioHighEnergy, setActiveVoiceSlug, preloadSfx } from "@/lib/audio";
+import { setAudioHighEnergy, setActiveVoice, preloadSfx } from "@/lib/audio";
+import { VOICE_PROFILES } from "@/lib/settingsContext";
 
 function Router() {
   return (
@@ -38,7 +39,8 @@ function AppShell() {
   }, [settings.audioHighEnergyEnabled]);
 
   useEffect(() => {
-    setActiveVoiceSlug(settings.selectedVoiceSlug);
+    const profile = VOICE_PROFILES.find((v) => v.slug === settings.selectedVoiceSlug);
+    if (profile) setActiveVoice(profile.slug, profile.id);
   }, [settings.selectedVoiceSlug]);
 
   useEffect(() => {

@@ -8,6 +8,7 @@ const preloadQueue = new Set<string>();
 
 let _highEnergyEnabled = true;
 let _activeVoiceSlug = "sarah";
+let _activeVoiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah default
 let _currentSpeech: HTMLAudioElement | null = null;
 
 // Pre-allocate 3 Audio objects at module load — avoids construction overhead on first tap
@@ -29,6 +30,15 @@ export function setAudioHighEnergy(enabled: boolean) {
   _highEnergyEnabled = enabled;
 }
 
+export function setActiveVoice(slug: string, voiceId: string) {
+  if (_activeVoiceSlug !== slug || _activeVoiceId !== voiceId) {
+    _activeVoiceSlug = slug;
+    _activeVoiceId = voiceId;
+    wordCache.clear();
+  }
+}
+
+/** @deprecated use setActiveVoice */
 export function setActiveVoiceSlug(slug: string) {
   if (_activeVoiceSlug !== slug) {
     _activeVoiceSlug = slug;
@@ -93,7 +103,7 @@ function playAudio(audio: HTMLAudioElement): void {
 export function speakWord(word: string): void {
   const paths = resolveAudioPaths(word);
 
-  // Fast path: cached element (preloaded — zero latency)
+  // Fast path: cached element (preloaded or previously live-fetched — zero latency)
   for (const path of paths) {
     if (wordCache.has(path)) {
       playAudio(wordCache.get(path)!);
@@ -103,10 +113,25 @@ export function speakWord(word: string): void {
 
   // Pool path: reuse a pre-created Audio object (avoids new Audio() overhead)
   const poolAudio = nextPoolAudio();
+  const cacheKey = paths[0]; // Voice-specific key for caching live results
+
+  const tryLiveApi = () => {
+    // Use the live TTS endpoint so non-baked voices genuinely sound different.
+    // The response is cached in wordCache so repeat taps are instant.
+    if (!_activeVoiceId) { fallbackSpeak(word); return; }
+    const url = `/api/tts-preview?voiceId=${encodeURIComponent(_activeVoiceId)}&text=${encodeURIComponent(word)}`;
+    const liveAudio = new Audio(url);
+    liveAudio.onerror = () => fallbackSpeak(word);
+    liveAudio.oncanplaythrough = () => {
+      // Cache under the voice-specific path so next tap is instant
+      if (!wordCache.has(cacheKey)) wordCache.set(cacheKey, liveAudio);
+    };
+    playAudio(liveAudio);
+  };
 
   const tryPath = (index: number) => {
     if (index >= paths.length) {
-      fallbackSpeak(word);
+      tryLiveApi();
       return;
     }
     const path = paths[index];
