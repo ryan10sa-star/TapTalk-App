@@ -249,15 +249,25 @@ const Pictogram = (() => {
    * @param {string} word - the word to load the pictogram for
    * @returns {string} - the path to the loaded image, or null if none found
    */
+  const isGitHub = window.location.hostname.includes('github.io');
+  const basePath = isGitHub ? 'TapTalk-App/' : '';
+
   function _loadImagePath(word) {
-    const pngPath = _localPath(word) + '.png';
-    const svgPath = _localPath(word) + '.svg';
+    const pngPath = `${basePath}aac-images/${word.toLowerCase()}.png`;
+    const svgPath = `${basePath}aac-images/${word.toLowerCase()}.svg`;
     return fetch(pngPath).then(response => response.ok ? pngPath : fetch(svgPath).then(response => response.ok ? svgPath : null));
   }
-  const imagePath = window.location.pathname.includes('TapTalk-App') ? '/TapTalk-App/aac-images/' : '/aac-images/';
+
+  const getImagePath = (word) => {
+    const fullPath = `${basePath}aac-images/${word.toLowerCase()}.png`;
+    return fetch(fullPath).then(response => response.ok ? fullPath : null).catch(() => {
+      console.error('Image missing:', fullPath);
+      return null;
+    });
+  };
 
   function _localPath(word) {
-    return `${imagePath}${word.toLowerCase()}.png`;
+    return `${basePath}aac-images/${word.toLowerCase()}`;
   }
 
   /**

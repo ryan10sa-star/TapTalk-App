@@ -4,7 +4,7 @@
     gap: 0.5rem;
   }
 }
-/* ============================================================
+/*
    Tablet-First approach: landscape orientation first
    Media queries aligned with index.html breakpoints
 */
@@ -22,9 +22,7 @@
     grid-template-columns: repeat(6, minmax(140px, 1fr));
   }
 }
-   TapTalk AAC — styles.css
-   Tablet-landscape-first, touch-action:manipulation throughout
-   ============================================================ */
+
 
 /* ---------- Reset & base ---------- */
 *, *::before, *::after {

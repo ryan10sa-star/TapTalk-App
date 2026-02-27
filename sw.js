@@ -6,15 +6,17 @@
 const CACHE_NAME = 'taptalk-v2';
 
 /** Static app-shell assets — must all be present; cached atomically on install */
+const isGitHub = self.location.hostname && self.location.hostname.includes('github.io');
+const basePath = isGitHub ? 'TapTalk-App/' : '';
 const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './db.js',
-  './data-export.js',
-  './manifest.json',
-  './icon.svg',
+  `${basePath}`,
+  `${basePath}index.html`,
+  `${basePath}styles.css`,
+  `${basePath}app.js`,
+  `${basePath}db.js`,
+  `${basePath}data-export.js`,
+  `${basePath}manifest.json`,
+  `${basePath}icon.svg`,
 ];
 
 /* ---------- Install: pre-cache shell + AAC images ---------- */
@@ -26,12 +28,12 @@ self.addEventListener('install', (event) => {
 
       // Explicitly cache all AAC images listed in vocabulary.json
       try {
-        const vocabRes = await fetch('./aac-images/vocabulary.json');
+        const vocabRes = await fetch(`${basePath}aac-images/vocabulary.json`);
         if (vocabRes.ok) {
-          await cache.put('./aac-images/vocabulary.json', vocabRes.clone());
+          await cache.put(`${basePath}aac-images/vocabulary.json`, vocabRes.clone());
           const words = await vocabRes.json();
           if (Array.isArray(words) && words.length > 0) {
-            const imagePaths = words.map(word => `./aac-images/${word}.png`);
+            const imagePaths = words.map(word => `${basePath}aac-images/${word}.png`);
             await Promise.allSettled(imagePaths.map(path => cache.add(path)));
           }
         }
