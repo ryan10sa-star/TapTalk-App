@@ -24,11 +24,7 @@ self.addEventListener('install', (event) => {
       /* App shell must all succeed — fail fast if any is missing */
       await cache.addAll(STATIC_ASSETS);
 
-      /* Dynamically cache every AAC image listed in vocabulary.json.
-       * This replaces the old hardcoded AAC_IMAGE_ASSETS array so the SW
-       * automatically covers the full 100+ word library (and any future
-       * additions) without manual maintenance.
-       * Uses allSettled so a single missing file never blocks SW install. */
+      // Dynamically cache every AAC image listed in vocabulary.json as PNG only
       try {
         const vocabRes = await fetch('./aac-images/vocabulary.json');
         if (vocabRes.ok) {
@@ -36,16 +32,13 @@ self.addEventListener('install', (event) => {
           const words = await vocabRes.json();
           if (Array.isArray(words) && words.length > 0) {
             await Promise.allSettled(
-              words.flatMap((word) => [
-                cache.add(`./aac-images/${word}.png`),
-                cache.add(`./aac-images/${word}.svg`),
-              ])
+              words.map((word) => cache.add(`./aac-images/${word}.png`))
             );
           }
         }
       } catch (_) {
-        /* vocabulary.json not yet generated (fresh checkout / CI) —
-         * images will be cached on first network access via the fetch handler */
+        // vocabulary.json not yet generated (fresh checkout / CI) —
+        // images will be cached on first network access via the fetch handler
       }
     })
   );

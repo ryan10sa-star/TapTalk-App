@@ -1,4 +1,6 @@
 {
+  "start_url": "./",
+  "scope": "./",
   "name": "TapTalk AAC",
   "short_name": "TapTalk",
   "description": "Offline-first Augmentative and Alternative Communication app",

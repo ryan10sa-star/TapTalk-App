@@ -1,8 +1,32 @@
 /* ============================================================
-   TapTalk AAC — app.js
-   Modular, offline-first AAC application.
-   IndexedDB event log is designed for future Anderson-OS sync.
+   Exported functions
    ============================================================ */
+
+/**
+ * Retrieves the list of active words from localStorage.
+ * Returns an empty array if no active vocabulary is set.
+ */
+function getActiveVocab() {
+  try {
+    const stored = localStorage.getItem(CONFIG.LS_VOCAB_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (_) {}
+  return [];
+}
+
+/**
+ * Placeholder function for Anderson-OS sync.
+ * Will be replaced with the actual implementation in the future.
+ */
+function refresh() {}
+
+
+window.getVocab = getActiveVocab;
+// ============================================================
+//   TapTalk AAC — app.js
+//   Modular, offline-first AAC application.
+//   IndexedDB event log is designed for future Anderson-OS sync.
+// ============================================================
 
 'use strict';
 
@@ -100,7 +124,7 @@ const DB = (() => {
       };
 
       req.onerror = (e) => {
-        console.error('[TapTalk] IndexedDB open error:', e.target.error);
+        // Critical error, keep for debugging if needed
         reject(e.target.error);
       };
     });
@@ -116,7 +140,7 @@ const DB = (() => {
     };
 
     if (!_db) {
-      console.warn('[TapTalk] DB not ready — event not persisted:', entry);
+      // DB not ready — event not persisted
       DevTools.append({ ...entry, id: 'pending' });
       return;
     }
@@ -130,7 +154,7 @@ const DB = (() => {
       DevTools.append(entry);
     };
 
-    req.onerror = () => console.warn('[TapTalk] Failed to persist event — app continues normally');
+    req.onerror = () => {} // Silent fail
   }
 
   function getAll() {
@@ -207,9 +231,21 @@ const Speech = (() => {
    (browser picks the first matching <img src> that loads).
    ============================================================ */
 const Pictogram = (() => {
-  /** Path for a bundled SVG pictogram */
+    /** Generate a fallback tile with the first letter if image is missing */
+    function _fallbackTile(imgEl, word) {
+      const letter = word.charAt(0).toUpperCase();
+      const color = `hsl(${(word.charCodeAt(0) * 37) % 360}, 70%, 60%)`;
+      const svg =
+        `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'>` +
+        `<rect width='100' height='100' rx='18' fill='${color}'/>` +
+        `<text x='50' y='62' text-anchor='middle' font-size='56' fill='#fff' font-family='Arial' dy='.3em'>${letter}</text>` +
+        `</svg>`;
+      imgEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+      imgEl.alt = word;
+    }
+  /** Path for a bundled PNG pictogram */
   function _localPath(word) {
-    return `./aac-images/${word.toLowerCase()}.svg`;
+    return `./aac-images/${word.toLowerCase()}.png`;
   }
 
   /**
@@ -219,6 +255,7 @@ const Pictogram = (() => {
   function load(imgEl, word) {
     imgEl.src = _localPath(word);
     imgEl.onerror = () => {
+      // Silent fail for missing image
       imgEl.onerror = null;
       imgEl.removeAttribute('src');
     };
@@ -259,7 +296,7 @@ const DevTools = (() => {
     document.getElementById('dev-preview-export').addEventListener('click', async () => {
       try {
         const json = await window.exportTapTalkData?.();
-        if (!json) { console.warn('[TapTalk] Export returned no data'); return; }
+        if (!json) { return; }
         const blob = new Blob([json], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
@@ -270,7 +307,7 @@ const DevTools = (() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (err) {
-        console.error('[TapTalk] Export failed:', err);
+        // Silent fail
       }
     });
   }
@@ -306,7 +343,7 @@ const DevTools = (() => {
       _updateCounter();
       [...events].reverse().forEach((e) => _entries().appendChild(_renderEntry(e)));
     } catch (err) {
-      console.warn('[TapTalk] DevTools load failed:', err);
+      // Silent fail
     }
   }
 
@@ -589,7 +626,7 @@ const AndersonOS = (() => {
         } catch (shareErr) {
           /* User cancelled or files-share unsupported — fall through to download */
           if (shareErr.name !== 'AbortError') {
-            console.warn('[AndersonOS] Share unavailable, falling back to download:', shareErr);
+            // Silent fail
           } else {
             return; /* User deliberately cancelled — do nothing */
           }
@@ -607,7 +644,7 @@ const AndersonOS = (() => {
       URL.revokeObjectURL(url);
       DB.log('data_exported', { method: 'download', records: payload.metrics.totalEvents });
     } catch (err) {
-      console.warn('[AndersonOS] Export failed:', err);
+      // Silent fail
     }
   }
 
@@ -623,7 +660,7 @@ const AndersonOS = (() => {
       DB.log('database_cleared', {});
       await refresh();
     } catch (err) {
-      console.warn('[AndersonOS] Clear failed:', err);
+      // Silent fail
     }
   }
 
@@ -763,11 +800,16 @@ const Settings = (() => {
       chk.checked = isOn;
       chk.addEventListener('change', () => lbl.classList.toggle('active', chk.checked));
 
+
       const img = document.createElement('img');
       img.className = 'settings-word-img';
-      img.src = `./aac-images/${word}.svg`;
+      img.src = `./aac-images/${word}.png`;
       img.alt = word;
-      img.onerror = () => { img.onerror = null; img.style.display = 'none'; };
+      img.onerror = () => {
+        // Silent fail for missing image
+        img.onerror = null;
+        Pictogram._fallbackTile ? Pictogram._fallbackTile(img, word) : img.style.display = 'none';
+      };
 
       const span = document.createElement('span');
       span.className = 'settings-word-label';
@@ -846,11 +888,11 @@ function registerSW() {
     navigator.serviceWorker
       .register('./sw.js')
       .then((reg) => {
-        console.log('[TapTalk] SW registered:', reg.scope);
+        // Silent for production
         DevTools.setSwStatus('active ✓', true);
       })
       .catch((err) => {
-        console.warn('[TapTalk] SW registration failed:', err);
+        // Silent for production
         DevTools.setSwStatus('failed ✗', false);
       });
   } else {
@@ -888,7 +930,7 @@ async function init() {
     userAgent: navigator.userAgent,
   });
 
-  console.log('[TapTalk] Ready. Session:', SESSION_ID);
+  // Silent for production
 }
 
 /* ============================================================

@@ -1,4 +1,21 @@
 /* ============================================================
+   Tablet-First approach: landscape orientation first
+   Media queries aligned with index.html breakpoints
+   ============================================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet landscape */
+  #choice-bank {
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Tablet portrait and larger */
+  #choice-bank {
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+  }
+}
    TapTalk AAC — styles.css
    Tablet-landscape-first, touch-action:manipulation throughout
    ============================================================ */
