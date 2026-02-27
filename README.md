@@ -19,11 +19,27 @@ Open this URL in your browser right now (no account, no publishing needed):
 
 ### 🚀 Permanent GitHub Pages URL (one-time setup)
 
-1. Go to **GitHub → Settings → Pages → Build and deployment**
+**Step 1 — Set the Pages source (do this once):**
+
+1. In your repo go to **Settings → Pages → Build and deployment**
 2. Set **Source** → **Deploy from a branch**
-3. Set **Branch** → **`gh-pages`** and folder **`/ (root)`**, then click **Save**
-4. The deploy workflow already exists (`.github/workflows/deploy.yml`) and will push to the `gh-pages` branch automatically on every push
-5. Your permanent URL: **https://ryan10sa-star.github.io/TapTalk-App/**
+3. **Branch** dropdown → select **`copilot/build-offline-first-pwa`**, folder **`/ (root)`**
+4. Click **Save**
+
+> ℹ️ If the Save button is greyed out, the branch is already selected — GitHub Pages will
+> build automatically within ~1 minute.  Refresh the page and a green banner with your
+> live URL will appear at the top of the Pages settings screen.
+
+**Step 2 — your live URL:**
+
+**https://ryan10sa-star.github.io/TapTalk-App/**
+
+---
+
+#### After merging this PR to `main`
+
+Once the PR is merged, repeat Step 1 and change the branch from
+`copilot/build-offline-first-pwa` to **`main`** so future updates deploy automatically.
 
 ---
 

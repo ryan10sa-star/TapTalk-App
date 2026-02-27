@@ -1,12 +1,14 @@
 # Deploy TapTalk AAC to GitHub Pages
 #
-# Live preview URL: https://ryan10sa-star.github.io/TapTalk-App/
+# This workflow runs automatically when changes are pushed to main.
 #
-# One-time repo setup (only needed once):
+# One-time repo setup (do this BEFORE merging the PR):
 #   GitHub → Settings → Pages → Build and deployment
 #     → Source: "Deploy from a branch"
-#     → Branch: gh-pages  /  (root)
-#   Then click Save.  The workflow creates/updates the gh-pages branch automatically.
+#     → Branch: copilot/build-offline-first-pwa  /  (root)
+#   Click Save.  The app will be live at https://ryan10sa-star.github.io/TapTalk-App/
+#
+# After merging the PR to main, change the branch in Pages settings to "main".
 
 name: Deploy to GitHub Pages
 
@@ -14,13 +16,12 @@ on:
   push:
     branches:
       - main
-      # Keep the active dev branch so the preview URL stays live while the PR
-      # is in review. Remove this line once the branch is merged to main.
-      - copilot/build-offline-first-pwa
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 # Only one deployment runs at a time; don't cancel in-progress deploys.
 concurrency:
@@ -30,19 +31,26 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           # Deploy straight from the repo root — no build step needed.
           # All app files (HTML/CSS/JS/SVG) are at the root level; images
           # live in aac-images/ which matches the ./aac-images/ paths used
           # throughout the app and service worker.
-          publish_dir: .
-          # Exclude CI config and dev tooling — they're not part of the web app.
-          exclude_assets: '.github,node_modules,dist,fetch-aac-images.js,package.json,package-lock.json'
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
