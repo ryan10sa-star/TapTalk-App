@@ -1,0 +1,139 @@
+{
+  "verified": [
+    "Wait",
+    "Now",
+    "Later",
+    "Today",
+    "Tomorrow",
+    "Yesterday",
+    "Morning",
+    "Night",
+    "Ready",
+    "Not Ready",
+    "Finished",
+    "Dog",
+    "Cat",
+    "Bird",
+    "Fish",
+    "Horse",
+    "Cow",
+    "Duck",
+    "Bear",
+    "Deer",
+    "Rabbit",
+    "Turtle",
+    "Frog",
+    "Bug",
+    "Spider",
+    "Bath",
+    "Brush Teeth",
+    "Get Dressed",
+    "Wake Up",
+    "Go to Sleep",
+    "Wash Hands",
+    "Comb Hair",
+    "Breakfast",
+    "Lunch",
+    "Dinner",
+    "Snack",
+    "Swing",
+    "Slide",
+    "Climb",
+    "Bike",
+    "Paint",
+    "Build",
+    "Puzzle",
+    "Movie",
+    "Games",
+    "Sports",
+    "Cooking",
+    "Garden",
+    "Shopping",
+    "Church",
+    "Party",
+    "Camp",
+    "Sun",
+    "Rain",
+    "Wind",
+    "Snow",
+    "Tree",
+    "Flower",
+    "Water",
+    "Lake",
+    "Mountain",
+    "Sky",
+    "Moon",
+    "Grass",
+    "Rock",
+    "Kinetic Sand",
+    "Blocks",
+    "Bubbles",
+    "Sand",
+    "OT",
+    "PT",
+    "Speech",
+    "Reading",
+    "Math",
+    "Recess",
+    "Circle Time",
+    "Music Class",
+    "Gym",
+    "Break"
+  ],
+  "fixed": [
+    {
+      "word": "Stars",
+      "oldId": 2752,
+      "newId": 6978,
+      "keywords": "stars, sky, firmament"
+    }
+  ],
+  "noResults": [
+    "Excuse Me",
+    "Playdough",
+    "Token",
+    "Reward"
+  ],
+  "lowConfidence": [
+    {
+      "word": "Nap Time",
+      "bestKeywords": "never",
+      "score": -20
+    },
+    {
+      "word": "Story Time",
+      "bestKeywords": "never",
+      "score": -20
+    },
+    {
+      "word": "Trains",
+      "bestKeywords": "train, passenger train",
+      "score": -20
+    },
+    {
+      "word": "Dolls",
+      "bestKeywords": "doll",
+      "score": -20
+    },
+    {
+      "word": "Trucks",
+      "bestKeywords": "truck, dump truck, tip truck",
+      "score": -20
+    },
+    {
+      "word": "Centers",
+      "bestKeywords": "centre, center",
+      "score": -20
+    },
+    {
+      "word": "Art",
+      "bestKeywords": "flute, vertical flute",
+      "score": -20
+    },
+    {
+      "word": "Library Time",
+      "bestKeywords": "today",
+      "score": -20
+    }
+  ]
+}
