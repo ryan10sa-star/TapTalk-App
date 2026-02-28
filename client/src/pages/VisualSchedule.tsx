@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { speakWord, playSfx } from "@/lib/audio";
 import { Edit2, Check, Timer, Play, Pause, RotateCcw, ChevronDown, ImageOff, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/lib/settingsContext";
 
 export const ALL_SCHEDULE_OPTIONS = [
   // School
@@ -91,8 +92,17 @@ function formatDate(d: Date): string {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+function formatTime(d: Date, use12: boolean): string {
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: use12 });
+}
+
+function formatSlotTime(t: string, use12: boolean): string {
+  const [h, m] = t.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return t;
+  if (!use12) return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 function timeToMinutes(t: string): number {
@@ -172,6 +182,7 @@ function loadSchedule(): ScheduleItem[] {
 }
 
 export default function VisualSchedule() {
+  const { settings } = useSettings();
   const [schedule, setSchedule] = useState<ScheduleItem[]>(loadSchedule);
   const [editMode, setEditMode] = useState(false);
   const [editDropdown, setEditDropdown] = useState<number | null>(null);
@@ -317,7 +328,7 @@ export default function VisualSchedule() {
               className="text-xl font-black tabular-nums leading-none text-slate-800"
               data-testid="live-clock"
             >
-              {formatTime(now)}
+              {formatTime(now, settings.use12Hour)}
             </div>
             <Button
               size="sm"
@@ -333,7 +344,7 @@ export default function VisualSchedule() {
 
         {nextActivity && !editMode && (
           <div className="mt-2 text-xs font-semibold text-slate-500">
-            Next: <span style={{ color: ITEM_COLORS[nextActivity.label] ?? DEFAULT_COLOR }}>{nextActivity.label} at {nextActivity.time}</span>
+            Next: <span style={{ color: ITEM_COLORS[nextActivity.label] ?? DEFAULT_COLOR }}>{nextActivity.label} at {formatSlotTime(nextActivity.time, settings.use12Hour)}</span>
           </div>
         )}
       </div>
@@ -384,10 +395,10 @@ export default function VisualSchedule() {
                     />
                   ) : (
                     <div
-                      className="text-xs font-black shrink-0 w-12 text-right"
+                      className="text-xs font-black shrink-0 w-16 text-right"
                       style={{ color: isNow ? color : "#94A3B8" }}
                     >
-                      {item.time}
+                      {formatSlotTime(item.time, settings.use12Hour)}
                     </div>
                   )}
 

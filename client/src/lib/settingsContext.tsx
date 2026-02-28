@@ -24,6 +24,7 @@ export interface AppSettings {
   maskedWords: string[];
   selectedVoiceSlug: string;
   rewardLabel: string;
+  use12Hour: boolean;
 }
 
 const STORAGE_KEY = "taptalk-settings-v1";
@@ -35,6 +36,7 @@ const DEFAULTS: AppSettings = {
   maskedWords: [],
   selectedVoiceSlug: "sarah",
   rewardLabel: "",
+  use12Hour: true,
 };
 
 function loadSettings(): AppSettings {

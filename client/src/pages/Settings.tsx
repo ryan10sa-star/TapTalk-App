@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play, ThumbsUp, Activity, Plus, Trash2, CalendarDays, Home, GraduationCap } from "lucide-react";
+import { X, Search, CheckCircle2, Sparkles, Volume2, Vibrate, Eye, ShieldCheck, Play, ThumbsUp, Activity, Plus, Trash2, CalendarDays, Home, GraduationCap, RefreshCw, AlertTriangle, Clock } from "lucide-react";
 import { useSettings, hapticTap, VOICE_PROFILES, type VoiceProfile } from "@/lib/settingsContext";
 import { previewVoice } from "@/lib/audio";
 import { Button } from "@/components/ui/button";
@@ -501,6 +501,15 @@ export default function Settings({ onClose }: SettingsProps) {
             onChange={(v) => update({ audioHighEnergyEnabled: v })}
             testId="toggle-audio"
           />
+          <SettingRow
+            icon={Clock}
+            iconColor="#34D399"
+            title="12-Hour Clock"
+            subtitle="Show times as 1:30 PM instead of 13:30"
+            value={settings.use12Hour}
+            onChange={(v) => update({ use12Hour: v })}
+            testId="toggle-12hour"
+          />
           <div className="flex items-center gap-4 px-4 py-3.5">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -968,7 +977,42 @@ export default function Settings({ onClose }: SettingsProps) {
           </div>
         </div>
 
-        <div className="px-4 pb-6">
+        <div className="px-4 pb-2">
+          <div className="rounded-2xl p-4" style={{ backgroundColor: "#0F172A", border: "1px solid #1E293B" }}>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={14} style={{ color: "#FBBF24" }} />
+              <span className="text-sm font-bold" style={{ color: "#F1F5F9" }}>Troubleshooting</span>
+            </div>
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: "#9CA3AF" }}>
+              If images or audio sound wrong after an update, the device is serving a cached version. Use the button below to clear all cached data and reload fresh.
+            </p>
+            <Button
+              data-testid="button-clear-cache"
+              size="sm"
+              className="w-full gap-2 font-semibold text-xs"
+              style={{ backgroundColor: "#1E293B", color: "#F1F5F9", border: "1px solid #334155" }}
+              onClick={() => {
+                if ('caches' in window) {
+                  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+                    window.location.reload();
+                  });
+                } else {
+                  window.location.reload();
+                }
+              }}
+            >
+              <RefreshCw size={13} /> Clear Cache &amp; Reload
+            </Button>
+            <div className="mt-3 text-xs leading-relaxed" style={{ color: "#6B7280" }}>
+              <span className="font-semibold" style={{ color: "#9CA3AF" }}>Manual hard refresh:</span>
+              <span className="ml-1">Mac: <kbd className="px-1 rounded text-xs" style={{ backgroundColor: "#1E293B" }}>⌘ Shift R</kbd></span>
+              <span className="ml-2">Windows/Chrome: <kbd className="px-1 rounded text-xs" style={{ backgroundColor: "#1E293B" }}>Ctrl Shift R</kbd></span>
+              <span className="ml-2">iPad/iPhone: hold the reload button</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pb-6 pt-2">
           <div className="rounded-xl p-3 text-center text-xs" style={{ backgroundColor: "#0F172A", color: "#4B5563" }}>
             All settings saved automatically · Persists after refresh
           </div>
