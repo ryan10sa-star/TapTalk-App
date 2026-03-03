@@ -60,27 +60,27 @@ export const ITEM_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = "#64748B";
 
 export const SCHOOL_SCHEDULE = [
-  { time: "8:30", label: "Circle Time" },
-  { time: "9:00", label: "Reading" },
-  { time: "9:45", label: "Math" },
+  { time: "08:30", label: "Circle Time" },
+  { time: "09:00", label: "Reading" },
+  { time: "09:45", label: "Math" },
   { time: "10:30", label: "Recess" },
   { time: "11:00", label: "Centers" },
   { time: "11:45", label: "Lunch" },
   { time: "12:30", label: "OT" },
-  { time: "1:15",  label: "Speech" },
+  { time: "13:15", label: "Speech" },
 ];
 
 export const HOME_SCHEDULE = [
-  { time: "7:00", label: "Breakfast" },
-  { time: "7:30", label: "Get Dressed" },
-  { time: "7:45", label: "Brush Teeth" },
-  { time: "8:00", label: "Pack Backpack" },
-  { time: "3:30", label: "After School" },
-  { time: "4:00", label: "Snack" },
-  { time: "5:00", label: "Homework" },
-  { time: "6:00", label: "Dinner" },
-  { time: "7:00", label: "Bath Time" },
-  { time: "7:30", label: "Bedtime Routine" },
+  { time: "07:00", label: "Breakfast" },
+  { time: "07:30", label: "Get Dressed" },
+  { time: "07:45", label: "Brush Teeth" },
+  { time: "08:00", label: "Pack Backpack" },
+  { time: "15:30", label: "After School" },
+  { time: "16:00", label: "Snack" },
+  { time: "17:00", label: "Homework" },
+  { time: "18:00", label: "Dinner" },
+  { time: "19:00", label: "Bath Time" },
+  { time: "19:30", label: "Bedtime Routine" },
 ];
 
 const SCHEDULE_KEY = "taptalk-schedule";
@@ -375,19 +375,14 @@ export default function VisualSchedule() {
                   {editMode ? (
                     <input
                       type="time"
-                      value={item.time.includes(":") && item.time.length === 4
-                        ? "0" + item.time
-                        : item.time.length === 4
-                        ? "0" + item.time
-                        : item.time}
+                      value={(() => {
+                        const [h, m] = item.time.split(":");
+                        return `${String(parseInt(h || "0", 10)).padStart(2, "0")}:${String(parseInt(m || "0", 10)).padStart(2, "0")}`;
+                      })()}
                       onChange={(e) => {
-                        const raw = e.target.value;
+                        const raw = e.target.value; // always HH:MM 24hr from browser
                         if (!raw) return;
-                        const [hStr, mStr] = raw.split(":");
-                        const h = parseInt(hStr, 10);
-                        const m = parseInt(mStr, 10);
-                        const display = `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")}`;
-                        updateSlotTime(i, display);
+                        updateSlotTime(i, raw);
                       }}
                       data-testid={`time-input-${i}`}
                       className="text-xs font-black w-20 shrink-0 rounded-lg px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-100 text-slate-700 border border-slate-300"

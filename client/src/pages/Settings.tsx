@@ -807,13 +807,9 @@ export default function Settings({ onClose }: SettingsProps) {
                       return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
                     })()}
                     onChange={(e) => {
-                      const raw = e.target.value;
+                      const raw = e.target.value; // always HH:MM 24hr from browser
                       if (!raw) return;
-                      const [hStr, mStr] = raw.split(":");
-                      const h = parseInt(hStr, 10);
-                      const m = parseInt(mStr, 10);
-                      const display = `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")}`;
-                      updateSchedTime(i, display);
+                      updateSchedTime(i, raw);
                     }}
                     data-testid={`settings-time-${i}`}
                     className="w-24 shrink-0 rounded-lg px-2 py-1.5 text-xs font-black focus:outline-none focus:ring-2 focus:ring-blue-500"

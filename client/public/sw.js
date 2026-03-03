@@ -1,6 +1,6 @@
 // TapTalk AAC — Air-Gap Service Worker
 // Increment APP_VERSION to force a full cache refresh across all devices.
-const APP_VERSION = "v2026.3";
+const APP_VERSION = "v2026.5";
 const APP_CACHE = `taptalk-app-${APP_VERSION}`;
 const MEDIA_CACHE = `taptalk-media-${APP_VERSION}`;
 
