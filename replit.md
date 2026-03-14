@@ -1,6 +1,6 @@
-# TapTalk AAC — Lake County Edition (v4.0)
+# TapTalk AAC™ (v4.0)
 
-A premium Augmentative and Alternative Communication (AAC) Progressive Web App built for Maya.
+A free Augmentative and Alternative Communication (AAC) Progressive Web App.
 
 ## Architecture
 

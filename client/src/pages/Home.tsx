@@ -152,7 +152,7 @@ export default function Home() {
           </div>
           <div>
             <div className="text-base font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100">TapTalk</div>
-            <div className="text-xs font-semibold leading-tight" style={{ color: "#7C3AED" }}>AAC</div>
+            <div className="text-xs font-semibold leading-tight" style={{ color: "#7C3AED" }}>AAC™</div>
           </div>
         </div>
 

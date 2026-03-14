@@ -1,7 +1,7 @@
 {
-  "name": "TapTalk AAC - Lake County Edition",
-  "short_name": "TapTalk",
-  "description": "Premium AAC communication app for Maya",
+  "name": "TapTalk AAC",
+  "short_name": "TapTalk AAC",
+  "description": "Free AAC communication app for non-verbal and autistic learners",
   "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",
