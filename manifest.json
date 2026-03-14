@@ -1,0 +1,17 @@
+{
+  "name": "TapTalk AAC",
+  "short_name": "TapTalk AAC",
+  "description": "Free AAC communication app for non-verbal and autistic learners",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563EB",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
